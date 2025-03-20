@@ -1,0 +1,12 @@
+POST http://localhost:8080/api/users
+Content-Type:  application/json
+
+{
+  "mail": "johndoe@gmail.com",
+  "passwordHash": "JohnDoe123à",
+  "username": "johnnyboy",
+  "roles": ["admin"],
+  "recipesIds": ["objectID1","objectID2"]
+}
+
+
