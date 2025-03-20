@@ -1,7 +1,7 @@
-package com.example.recipe.services;
+package com.example.recipe.service;
 
-import com.example.recipe.models.Recipe;
-import com.example.recipe.repositories.RecipeRepository;
+import com.example.recipe.entity.Recipe;
+import com.example.recipe.repository.RecipeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

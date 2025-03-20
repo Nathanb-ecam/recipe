@@ -1,6 +1,6 @@
-package com.example.recipe.repositories;
+package com.example.recipe.repository;
 
-import com.example.recipe.models.lookup.Ingredient;
+import com.example.recipe.entity.lookup.Ingredient;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

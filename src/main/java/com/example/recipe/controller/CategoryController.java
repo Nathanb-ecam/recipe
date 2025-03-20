@@ -1,9 +1,7 @@
-package com.example.recipe.controllers;
+package com.example.recipe.controller;
 
-import com.example.recipe.models.lookup.Category;
-import com.example.recipe.models.lookup.Ingredient;
-import com.example.recipe.repositories.CategoryRepository;
-import com.example.recipe.repositories.IngredientRepository;
+import com.example.recipe.entity.lookup.Category;
+import com.example.recipe.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

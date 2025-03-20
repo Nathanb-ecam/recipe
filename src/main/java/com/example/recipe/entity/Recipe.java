@@ -1,7 +1,10 @@
-package com.example.recipe.models;
+package com.example.recipe.entity;
 
 
 
+import com.example.recipe.model.Amount;
+import com.example.recipe.model.RecipeIngredient;
+import com.example.recipe.model.RecipeStep;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import org.springframework.data.annotation.Id;

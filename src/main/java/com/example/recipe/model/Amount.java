@@ -1,4 +1,4 @@
-package com.example.recipe.models;
+package com.example.recipe.model;
 
 import lombok.Data;
 

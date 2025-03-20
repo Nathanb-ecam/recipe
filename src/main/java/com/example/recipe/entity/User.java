@@ -1,4 +1,4 @@
-package com.example.recipe.models;
+package com.example.recipe.entity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
