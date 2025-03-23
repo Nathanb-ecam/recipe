@@ -12,9 +12,11 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
+    private final CategoryRepository categoryRepository;
 
-    @Autowired
-    private CategoryRepository categoryRepository;
+    public CategoryController(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
+    }
 
     @GetMapping
     public List<Category> getAllIngredients() {

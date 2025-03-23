@@ -13,9 +13,11 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+    private final UserService userService;
 
-    @Autowired
-    private UserService userService;
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
     public List<UserDto> getAllUsers() {
@@ -32,6 +34,8 @@ public class UserController {
     public UserDto addUser(@RequestBody UserDto userDto) {
         return userService.addUser(userDto);
     }
+
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable String id) {

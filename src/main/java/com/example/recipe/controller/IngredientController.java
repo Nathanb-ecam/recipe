@@ -12,9 +12,11 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/ingredients")
 public class IngredientController {
+    private final IngredientRepository ingredientRepository;
 
-    @Autowired
-    private IngredientRepository ingredientRepository;
+    public IngredientController(IngredientRepository ingredientRepository) {
+        this.ingredientRepository = ingredientRepository;
+    }
 
     @GetMapping
     public List<Ingredient> getAllIngredients() {

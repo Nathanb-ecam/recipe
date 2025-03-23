@@ -1,5 +1,6 @@
 package com.example.recipe.controller;
 
+import com.example.recipe.dto.RecipeDto;
 import com.example.recipe.entity.Recipe;
 import com.example.recipe.service.RecipeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,13 +13,16 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/recipes")
 public class RecipeController {
+    private final RecipeService recipeService;
 
-    @Autowired
-    private RecipeService recipeService;
+    public RecipeController(RecipeService recipeService) {
+        this.recipeService = recipeService;
+    }
 
     @GetMapping
-    public List<Recipe> getAllRecipes() {
-        return recipeService.getAllRecipes();
+    public ResponseEntity<List<Recipe>> getAllRecipes() {
+        List<Recipe> recipes = recipeService.getAllRecipes();
+        return ResponseEntity.ok(recipes);
     }
 
     @GetMapping("/{id}")
@@ -27,8 +31,20 @@ public class RecipeController {
         return recipe.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+/*    @PutMapping("/{id}")
+    public ResponseEntity<Recipe> updateRecipe(@PathVariable String id, @RequestBody RecipeDto updatedRecipe) {
+        Recipe recipe = recipeService.updateRecipe(id, updatedRecipe);
+        return ResponseEntity.ok(recipe);
+    }*/
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Recipe> partialUpdateRecipe(@PathVariable String id, @RequestBody RecipeDto updatedRecipe) {
+        Recipe recipe = recipeService.partialUpdateRecipe(id, updatedRecipe);
+        return ResponseEntity.ok(recipe);
+    }
+    
     @PostMapping
-    public Recipe addRecipe(@RequestBody Recipe recipe) {
+    public Recipe addRecipe(@RequestBody RecipeDto recipe) {
         return recipeService.addRecipe(recipe);
     }
 
