@@ -1,0 +1,29 @@
+POST http://localhost:8080/api/recipes
+Content-Type: application/json
+
+{
+  "tenantId": "67e035070192062fb75b7063",
+  "name": "Vegan Salad",
+  "description": "A fresh and healthy vegan salad.",
+  "imageUrl": "https://example.com/salad.jpg",
+  "averagePrice": "20€",
+  "categoryIds": ["67e085bea126b74f8861ed61", "67e085bea126b74f8861ed62"],
+  "ingredients": [
+    {
+      "ingredientId": "67e08485a126b74f8861ed60",
+      "quantity": { "value": 200, "unit": "g" }
+    }
+  ],
+  "steps": [
+    {
+      "instruction": "Chop all vegetables.",
+      "duration": {"value": 10, "unit": "m"}
+    },
+    {
+      "instruction": "Mix them with dressing.",
+      "duration" : {"value": 3, "unit": "m"}
+    }
+  ]
+}
+
+

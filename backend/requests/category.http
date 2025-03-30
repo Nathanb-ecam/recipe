@@ -1,0 +1,20 @@
+POST http://localhost:8080/api/categories
+Content-Type:  application/json
+
+{
+  "name": "Healthy",
+  "type": "HEALTHY_BASED"
+}
+
+###
+
+POST http://localhost:8080/api/categories
+Content-Type:  application/json
+
+{
+  "name": "Less than 10€",
+  "type": "PRICE_BASED"
+}
+
+
+
