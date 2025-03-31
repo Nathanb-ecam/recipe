@@ -19,7 +19,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    /*@GetMapping
+    @GetMapping
     public List<UserDto> getAllUsers() {
         return userService.getAllUsers();
     }
@@ -34,7 +34,6 @@ public class UserController {
     public UserDto addUser(@RequestBody UserDto userDto) {
         return userService.addUser(userDto);
     }
-*/
 
 
     @DeleteMapping("/{id}")
