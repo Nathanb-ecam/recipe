@@ -14,8 +14,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
-
-
+import java.util.UUID;
 
 
 @Data
@@ -23,13 +22,15 @@ import java.util.List;
 @Document(collection = "recipes")
 public class Recipe {
     @Id
-    private String id;
+    private String id = UUID.randomUUID().toString();
     private String name;
 
-    private List<MealType> mealType;
+    private List<MealType> mealTypes;
+
+    private boolean isPublic = false;
 
     private Amount duration;
-    private String averagePrice = "";
+    private Amount averagePrice; //= new Amount()
     private String description;
     private String imageUrl;
     private List<String> categoryIds;

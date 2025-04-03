@@ -4,6 +4,7 @@ import com.example.recipe.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -40,6 +41,7 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(req ->
                         req
+                                .requestMatchers(HttpMethod.POST, "/api/v1/recipes/with-cover-image").authenticated()
                                 .requestMatchers("/api/v1/auth/**")  // Permit all requests to /api/v1/auth
                                 .permitAll()
                                 .anyRequest()  // Apply security to any other request

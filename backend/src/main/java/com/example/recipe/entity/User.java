@@ -1,16 +1,25 @@
 package com.example.recipe.entity;
 
+import com.example.recipe.model.Grocery;
+import com.example.recipe.model.IngredientType;
+import com.example.recipe.model.IngredientNameWithQuantity;
 import com.example.recipe.model.Role;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 
 @Data
 @Builder
@@ -20,12 +29,22 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class User implements UserDetails {
     @Id
-    private String id;
-    private String username;
+    private String id = UUID.randomUUID().toString();
+    @Getter
+    private String name;
     @NotBlank
     private String mail;
+    @NotBlank
     private String passwordHash;
+
     private List<String> recipesIds;
+    private Grocery grocery;
+
+
+    @CreatedDate
+    private Instant createdAt;
+    @LastModifiedDate
+    private Instant updatedAt;
 
     private Role role;
 
@@ -33,6 +52,7 @@ public class User implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return role.getAuthorities();
     }
+
 
 
     @Override

@@ -1,25 +1,54 @@
 package com.example.recipe.controller;
 
+import com.example.recipe.dto.RecipeDto;
 import com.example.recipe.dto.UserDto;
+import com.example.recipe.service.RecipeService;
 import com.example.recipe.service.UserService;
-import com.example.recipe.entity.User;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
 public class UserController {
-    private final UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
+
+    private final UserService userService;
+    private final RecipeService recipeService;
+
+
+    @PatchMapping("/{id}/updateGrocery")
+    public ResponseEntity<UserDto> updateGroceryForUserWithId(@PathVariable String id, @RequestBody @Valid UserDto updated) {
+        UserDto userDto = userService.updateGroceryForUserWithId(id, updated);
+        return ResponseEntity.ok(userDto);
     }
 
-    @GetMapping
+    @PatchMapping("/{id}/updateRecipesIds")
+    public ResponseEntity<UserDto> updateRecipeIdsForUserWithId(@PathVariable String id, @RequestBody @Valid UserDto updated) {
+        UserDto userDto = userService.updateRecipesIdsForUserWithId(id, updated);
+        return ResponseEntity.ok(userDto);
+    }
+
+    @GetMapping("/{id}/saved-recipes")
+    public ResponseEntity<List<RecipeDto>> getRecipesForUserWithId(@PathVariable String id) {
+        List<RecipeDto> recipes = recipeService.fetchUsersRecipes(id);
+        return ResponseEntity.ok(recipes);
+    }
+
+    @GetMapping("/details")
+    public ResponseEntity<UserDto> getUserDetails() {
+        var user = userService.getUserDetailed();
+        return ResponseEntity.ok(user);
+    }
+
+
+    /* TODO NEED TO ADD RBAC */
+
+    /*    @GetMapping
     public List<UserDto> getAllUsers() {
         return userService.getAllUsers();
     }
@@ -40,5 +69,5 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
-    }
+    }*/
 }

@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.UUID;
+
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,8 +18,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TemporaryUser {
     @Id
-    private String id;
-    private String username;
+    private String id = UUID.randomUUID().toString();
+    private String name;
     private String mail;
     private String password;
     private String OTP;

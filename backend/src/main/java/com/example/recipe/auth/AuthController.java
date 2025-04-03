@@ -2,6 +2,7 @@ package com.example.recipe.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,36 +23,26 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest authRequest) throws Exception {
-        try{
-            var authenticationResponse = authService.authenticate(authRequest);
-            return ResponseEntity.ok(authenticationResponse);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    public ResponseEntity<AuthenticationResponse> login(@RequestBody @Valid AuthenticationRequest authRequest) throws Exception {
+        var authenticationResponse = authService.authenticate(authRequest);
+        return ResponseEntity.ok(authenticationResponse);
     }
 
 
     @PostMapping("/signup")
-    public ResponseEntity<String> signup(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<String> signup(@RequestBody @Valid RegisterRequest registerRequest) {
         var mailSent = authService.handleNewRegistration(registerRequest);
         return mailSent ?
-                ResponseEntity.ok("Successfully created temp user")
+                ResponseEntity.ok("OTP notification sent")
                 : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
     }
 
     @PostMapping("/confirmAccount")
-    public ResponseEntity<String> confirm(@RequestBody ConfirmAccountRequest request){
-        try{
+    public ResponseEntity<String> confirm(@RequestBody @Valid ConfirmAccountRequest request){
             var accountCreated = authService.verifyOTP(request);
             return accountCreated ?
-                    ResponseEntity.ok("Successfully verified OTP")
+                    ResponseEntity.ok("Account successfully created")
                     : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong, could not verify OTP");
-        }catch (Exception e){
-            log.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
 
 
     }

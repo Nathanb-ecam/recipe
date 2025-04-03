@@ -3,6 +3,7 @@ package com.example.recipe.auth;
 import com.example.recipe.config.JwtService;
 import com.example.recipe.entity.TemporaryUser;
 import com.example.recipe.entity.User;
+import com.example.recipe.exception.OtpException;
 import com.example.recipe.model.Role;
 import com.example.recipe.repository.TemporaryUserRepository;
 import com.example.recipe.repository.UserRepository;
@@ -22,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -36,7 +38,7 @@ public class AuthService {
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) throws Exception {
+    public AuthenticationResponse authenticate(AuthenticationRequest request){
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getMail(),
@@ -58,9 +60,8 @@ public class AuthService {
     public boolean handleNewRegistration(RegisterRequest request){
         // 1 generate OTP
         var otp = otpService.generateOtp();
-        log.info(otp);
         // 2 create un temp user
-        var username = request.getUsername();
+        var username = request.getName();
         var mail = request.getMail();
         if (username == null || username.isEmpty()) {
             if (mail != null && mail.contains("@")) {
@@ -71,7 +72,7 @@ public class AuthService {
             return false;
         }
         var tempUser = TemporaryUser.builder()
-                        .username(username)
+                        .name(username)
                         .mail(mail)
                         .password(passwordEncoder.encode(request.getPassword()))
                         .OTP(otp)
@@ -87,32 +88,33 @@ public class AuthService {
 
 
 
-    public boolean verifyOTP(ConfirmAccountRequest request) throws Exception {
+    public boolean verifyOTP(ConfirmAccountRequest request){
         var tempUser = tempUserRepository.findByMail(request.getMail())
                 .orElseThrow(() -> new UsernameNotFoundException("Temporary user not found"));
 
-        if(tempUser.getOTP().equals(request.getOtp())){
-            log.debug("OTP verified");
-            var user = User.builder()
-                    .username(tempUser.getUsername())
-                    .mail(tempUser.getMail())
-                    .passwordHash(tempUser.getPassword())
-                    .role(Role.USER)
-                    .build();
-            userRepository.save(user);
-            log.debug("Created user from temporary: {}", user);
-            tempUserRepository.deleteById(tempUser.getId());
-            log.debug("Deleted temporary user: {}", tempUser);
-            return true;
+        if(!tempUser.getOTP().equals(request.getOtp())){
+            log.debug("Invalid OTP");
+            throw new OtpException("Invalid OTP");
         }
 
-        return false;
+        var user = User.builder()
+                .id(UUID.randomUUID().toString())
+                .name(tempUser.getName())
+                .mail(tempUser.getMail())
+                .passwordHash(tempUser.getPassword())
+                .role(Role.USER)
+                .build();
+        userRepository.save(user);
+        log.debug("Created user from temporary: {}", user);
+        tempUserRepository.deleteById(tempUser.getId());
+        log.debug("Deleted temporary user: {}", tempUser);
+        return true;
     }
 
 
     public AuthenticationResponse register(RegisterRequest request){
         var user = User.builder()
-                .username(request.getUsername())
+                .name(request.getName())
                 .mail(request.getMail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)

@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RegisterRequest {
 
-    private String username;
+    private String name;
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid mail format")

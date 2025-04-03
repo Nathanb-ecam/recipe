@@ -4,7 +4,8 @@ Content-Type: application/json
 
 {
 "name": "Broccoli",
-"categories" : ["Healty","Vegan"]
+"categories" : ["Healthy","Vegan"],
+"type": "VEGETABLE"
 
 }
 

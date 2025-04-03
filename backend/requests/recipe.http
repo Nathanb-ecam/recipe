@@ -8,6 +8,7 @@ Content-Type: application/json
   "imageUrl": "https://example.com/salad.jpg",
   "averagePrice": "20€",
   "categoryIds": ["67e085bea126b74f8861ed61", "67e085bea126b74f8861ed62"],
+  "isPrivate": false,
   "ingredients": [
     {
       "ingredientId": "67e08485a126b74f8861ed60",
