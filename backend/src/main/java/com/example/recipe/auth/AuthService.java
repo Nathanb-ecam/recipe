@@ -72,6 +72,7 @@ public class AuthService {
             return false;
         }
         var tempUser = TemporaryUser.builder()
+                        .id(UUID.randomUUID().toString())
                         .name(username)
                         .mail(mail)
                         .password(passwordEncoder.encode(request.getPassword()))

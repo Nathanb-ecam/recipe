@@ -4,6 +4,7 @@ import com.example.recipe.dto.RecipeDto;
 import com.example.recipe.entity.Recipe;
 import com.example.recipe.service.RecipeService;
 import com.example.recipe.utils.FileStorageUtils;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -50,9 +51,11 @@ public class RecipeController {
         return recipeService.createOne(recipe);
     }
 
-    @PostMapping(path = "/with-cover-image",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(path = "/with-cover-image",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public RecipeDto addRecipeWithImage(
-            @RequestPart("recipe") RecipeDto recipeDto,
+            @Valid @RequestPart("recipe") RecipeDto recipeDto,
             @RequestPart("image") MultipartFile image) {
 
         // Save the image and get the URL

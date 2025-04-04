@@ -25,8 +25,9 @@ public class FileStorageUtils {
             }
 
             // Generate a unique filename (to avoid overwrites)
-            String fileExtension = StringUtils.getFilenameExtension(file.getOriginalFilename());
-            String uniqueFileName = UUID.randomUUID() + "." + fileExtension;
+            String originalFilename = file.getOriginalFilename();
+            //String fileExtension = StringUtils.getFilenameExtension(originalFilename);
+            String uniqueFileName = System.currentTimeMillis() +  "_" + originalFilename;
 
             // Save the file
             Path filePath = uploadPath.resolve(uniqueFileName);
