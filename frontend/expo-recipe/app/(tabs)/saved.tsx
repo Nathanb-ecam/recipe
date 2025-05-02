@@ -223,6 +223,7 @@ export default function SavedRecipesScreen() {
         contentContainerStyle={{
           flexGrow: 1,
           width: '100%',
+          height: '100%',
           padding: 16,
         }}
         style={{ width: '100%' }}
@@ -232,8 +233,7 @@ export default function SavedRecipesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: {    
     backgroundColor: '#fff',
     width: '100%',
   },
@@ -265,9 +265,12 @@ const styles = StyleSheet.create({
   },
   filtersContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 16,        
-    borderWidth: 1,
-    borderColor: '#eee',
+    flexWrap: 'wrap',
+    gap: 8,
+    padding: 8,
+    marginBottom: 8,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
   },
   filterChipContainer: {
     marginRight: 8,
@@ -277,10 +280,12 @@ const styles = StyleSheet.create({
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    paddingVertical: 4,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: '#fff',
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   filterText: {
     marginRight: 4,
@@ -290,7 +295,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   content: {
-    flex: 1,
+    flex: 1,    
     padding: 16,
     alignItems: 'flex-start',
     width: '100%',

@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, FlatList } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { useAuth } from '../../contexts/AuthContext';
-import { api } from '../../services/api';
-import { DailyMealPlan } from '../../types';
+import { calendarApi } from '../../services/calendarApi';
+import { CalendarItem, MealEvent } from '../../types/calendar';
 import { RecipeDto, MealType } from '../../types/recipe';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { RecipeSelectionModal } from '../../components/RecipeSelectionModal';
+import { FontAwesome } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [mealPlan, setMealPlan] = useState<DailyMealPlan | null>(null);
+  const [calendarItem, setCalendarItem] = useState<CalendarItem | null>(null);
   const [loading, setLoading] = useState(false);
-  const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     loadMealPlan();
@@ -21,91 +23,110 @@ export default function CalendarScreen() {
 
   const loadMealPlan = async () => {
     try {
-      const data = await api.getMealPlan(selectedDate);
-      setMealPlan(data);
+      const data = await calendarApi.getMealPlan(selectedDate);
+      setCalendarItem(data);
     } catch (error: any) {
-      // If it's a 404 error, that's expected when no meal plan exists
-      if (error.message?.includes('404')) {
-        setMealPlan({
-          date: selectedDate,
-          breakfast: '',
-          lunch: '',
-          dinner: '',
-        });
-      } else {
-        console.error('Error loading meal plan:', error);
-      }
+      console.error('Error loading meal plan:', error);
     }
   };
 
-  const handleRecipeSelect = async (recipe: RecipeDto) => {
-    if (!selectedMealType || !mealPlan) return;
+  const handleAddMealEvent = async (recipe: RecipeDto, hourMinString: string) => {
+    if (!calendarItem) return;
 
-    const updatedMealPlan = {
-      ...mealPlan,
-      [selectedMealType.toLowerCase()]: recipe.id,
-      [`${selectedMealType.toLowerCase()}Recipe`]: recipe,
-      [`${selectedMealType.toLowerCase()}RecipeName`]: recipe.name,
+    const newMealEvent: MealEvent = {
+      hourMinString,
+      recipeId: recipe.id,
+      recipeName: recipe.name,
+    };
+
+    const updatedMealEvents = [...calendarItem.mealEvents, newMealEvent];
+    const updatedCalendarItem = {
+      ...calendarItem,
+      mealEvents: updatedMealEvents,
     };
 
     try {
-      await api.updateMealPlan(selectedDate, updatedMealPlan);
-      setMealPlan(updatedMealPlan);
+      await calendarApi.updateMealPlan(selectedDate, {
+        date: selectedDate,
+        mealEvents: updatedMealEvents,
+      });
+      setCalendarItem(updatedCalendarItem);
     } catch (error) {
       console.error('Error updating meal plan:', error);
     }
   };
 
-  const renderMealInput = (mealType: keyof DailyMealPlan, label: string) => {
-    const recipeId = mealPlan?.[mealType];
-    const recipeName = mealPlan?.[`${mealType}RecipeName` as keyof DailyMealPlan];
-    console.log('Rendering meal input:', { mealType, recipeId, recipeName });
-    return (
-      <View style={styles.mealInputContainer}>
-        <Text style={styles.mealLabel}>{label}</Text>
-        <TouchableOpacity
-          style={styles.mealInput}
-          onPress={() => {
-            const mealTypeUpperCase = mealType.toUpperCase() as MealType;
-            console.log('Setting meal type:', mealTypeUpperCase);
-            setSelectedMealType(mealTypeUpperCase);
-            setModalVisible(true);
-          }}
-        >
-          <Text style={styles.mealText}>
-            {recipeName || (recipeId && recipeId !== '' ? 'Loading recipe...' : 'Select recipe')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
+  const handleDeleteMealEvent = async (index: number) => {
+    if (!calendarItem) return;
+
+    const updatedMealEvents = [...calendarItem.mealEvents];
+    updatedMealEvents.splice(index, 1);
+
+    try {
+      await calendarApi.updateMealPlan(selectedDate, {
+        date: selectedDate,
+        mealEvents: updatedMealEvents,
+      });
+      setCalendarItem({
+        ...calendarItem,
+        mealEvents: updatedMealEvents,
+      });
+    } catch (error) {
+      console.error('Error deleting meal event:', error);
+    }
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <LoadingSpinner />
-      </SafeAreaView>
-    );
-  }
+  const renderMealEvent = ({ item, index }: { item: MealEvent; index: number }) => (
+    <View style={styles.mealEventContainer}>
+      <Text style={styles.mealTime}>{item.hourMinString}</Text>
+      <Text style={styles.recipeName}>{item.recipeName || 'Loading...'}</Text>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => handleDeleteMealEvent(index)}
+      >
+        <FontAwesome name="trash" size={16} color="#FF3B30" />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <Calendar
         onDayPress={(day: { dateString: string }) => setSelectedDate(day.dateString)}
         markedDates={{
-          [selectedDate]: { selected: true, selectedColor: '#007AFF' },
+          [selectedDate]: { selected: true, selectedColor: '#FFD700' },
+        }}
+        theme={{
+          todayTextColor: '#FFD700',
+          arrowColor: '#FFD700',
+          textMonthFontWeight: 'bold',
+          textDayHeaderFontWeight: 'bold',
         }}
       />
-      <ScrollView style={styles.content}>
-        {renderMealInput('breakfast', 'Breakfast')}
-        {renderMealInput('lunch', 'Lunch')}
-        {renderMealInput('dinner', 'Dinner')}
-      </ScrollView>
+      <View style={styles.content}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>Meal Events</Text>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setModalVisible(true)}
+          >
+            <FontAwesome name="plus" size={20} color="#FFD700" />
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={calendarItem?.mealEvents || []}
+          renderItem={renderMealEvent}
+          keyExtractor={(item, index) => index.toString()}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No meal events for this day</Text>
+          }
+        />
+      </View>
       <RecipeSelectionModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onSelect={handleRecipeSelect}
-        mealType={selectedMealType || 'BREAKFAST'}
+        onSelect={handleAddMealEvent}
+        mealType="BREAKFAST"
       />
     </SafeAreaView>
   );
@@ -120,24 +141,48 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  mealInputContainer: {
-    marginBottom: 20,
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  mealLabel: {
-    fontSize: 16,
+  title: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
   },
-  mealInput: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f8f8f8',
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  mealText: {
+  mealEventContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginBottom: 8,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+  },
+  mealTime: {
     fontSize: 16,
-    color: '#333',
+    fontWeight: '600',
+    width: 80,
+  },
+  recipeName: {
+    flex: 1,
+    fontSize: 16,
+    marginLeft: 12,
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 20,
   },
 }); 

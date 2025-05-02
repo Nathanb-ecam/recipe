@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FFD700',
     height: 50,
     borderRadius: 8,
     justifyContent: 'center',
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   linkText: {
-    color: '#007AFF',
+    color: '#FFD700',
     textAlign: 'center',
     marginTop: 20,
   },

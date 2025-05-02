@@ -44,8 +44,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    borderWidth: 4,
-    borderColor: '#007AFF',
+    borderWidth: 3,
+    borderColor: '#FFD700',
     borderTopColor: 'transparent',
+    animation: 'spin 1s linear infinite',
   },
 }); 

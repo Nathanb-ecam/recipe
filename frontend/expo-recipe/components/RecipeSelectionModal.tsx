@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, Image, TextI
 import { api } from '../services/api';
 import { RecipeDto, MealType } from '../types/recipe';
 import { useAuth } from '../contexts/AuthContext';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 type RecipeSelectionModalProps = {
   visible: boolean;
   onClose: () => void;
-  onSelect: (recipe: RecipeDto) => void;
+  onSelect: (recipe: RecipeDto, hourMinString: string) => void;
   mealType: MealType;
 };
 
@@ -15,6 +16,8 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
   const [savedRecipes, setSavedRecipes] = useState<RecipeDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
+  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -41,27 +44,8 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
         return;
       }
 
-      console.log('Looking for meal type:', mealType);
       console.log('Total recipes loaded:', data.length);
-      
-      // Filter recipes by exact meal type match
-      const filteredRecipes = data.filter(recipe => {
-        if (!recipe.mealTypes) {
-          console.log('Recipe missing mealTypes:', recipe);
-          return false;
-        }
-        const hasMatchingType = recipe.mealTypes.some(type => {
-          const match = type.toUpperCase() === mealType.toUpperCase();
-          console.log(`Comparing ${type} with ${mealType}: ${match}`);
-          return match;
-        });
-        console.log(`Recipe ${recipe.name} has matching type: ${hasMatchingType}`);
-        return hasMatchingType;
-      });
-      
-      console.log('Filtered recipes count:', filteredRecipes.length);
-      console.log('Filtered recipes:', filteredRecipes);
-      setSavedRecipes(filteredRecipes);
+      setSavedRecipes(data);
     } catch (error) {
       console.error('Error loading saved recipes:', error);
       if (error instanceof Error) {
@@ -80,13 +64,28 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
     );
   }, [savedRecipes, searchText]);
 
+  const handleTimeChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (selectedDate) {
+      setSelectedTime(selectedDate);
+    }
+  };
+
+  const handleTimeConfirm = () => {
+    setShowTimePicker(false);
+  };
+
+  const handleRecipeSelect = (recipe: RecipeDto) => {
+    const hour = selectedTime.getHours().toString().padStart(2, '0');
+    const minute = selectedTime.getMinutes().toString().padStart(2, '0');
+    const hourMinString = `${hour}h${minute}`;
+    onSelect(recipe, hourMinString);
+    onClose();
+  };
+
   const renderRecipeItem = ({ item }: { item: RecipeDto }) => (
     <TouchableOpacity
       style={styles.recipeItem}
-      onPress={() => {
-        onSelect(item);
-        onClose();
-      }}
+      onPress={() => handleRecipeSelect(item)}
     >
       <Image
         source={{ uri: item?.imageUrl || 'https://via.placeholder.com/150' }}
@@ -115,11 +114,42 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <View style={styles.headerContainer}>
-            <Text style={styles.modalTitle}>Select {mealType} Recipe</Text>
+            <Text style={styles.modalTitle}>Select Recipe</Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
+
+          <View style={styles.timePickerContainer}>
+            <Text style={styles.timeLabel}>Time:</Text>
+            <TouchableOpacity
+              style={styles.timeButton}
+              onPress={() => setShowTimePicker(true)}
+            >
+              <Text style={styles.timeText}>
+                {selectedTime.getHours().toString().padStart(2, '0')}:
+                {selectedTime.getMinutes().toString().padStart(2, '0')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {showTimePicker && (
+            <View style={styles.timePickerWrapper}>
+              <DateTimePicker
+                value={selectedTime}
+                mode="time"
+                is24Hour={true}
+                display="spinner"
+                onChange={handleTimeChange}
+              />
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={handleTimeConfirm}
+              >
+                <Text style={styles.confirmButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.searchContainer}>
             <TextInput
@@ -137,7 +167,7 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
           ) : filteredRecipes.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                {searchText ? 'No recipes found' : 'No saved recipes available for ' + mealType}
+                {searchText ? 'No recipes found' : 'No saved recipes available'}
               </Text>
             </View>
           ) : (
@@ -188,6 +218,25 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+  },
+  timePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  timeLabel: {
+    fontSize: 16,
+    marginRight: 12,
+  },
+  timeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+  },
+  timeText: {
+    fontSize: 16,
+    color: '#333',
   },
   searchContainer: {
     marginBottom: 16,
@@ -245,7 +294,7 @@ const styles = StyleSheet.create({
   closeButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FFD700',
     borderRadius: 6,
   },
   closeButtonText: {
@@ -273,5 +322,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  timePickerWrapper: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  confirmButton: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 
