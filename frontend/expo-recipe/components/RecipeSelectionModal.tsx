@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, Image } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, Image, TextInput } from 'react-native';
 import { api } from '../services/api';
 import { RecipeDto, MealType } from '../types/recipe';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +14,7 @@ type RecipeSelectionModalProps = {
 export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: RecipeSelectionModalProps) => {
   const [savedRecipes, setSavedRecipes] = useState<RecipeDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
     try {
       console.log('Loading recipes for IDs:', user.recipesIds);
       const data = await api.getRecipesFromIds(user.recipesIds);
-      console.log('Raw API Response:', JSON.stringify(data, null, 2));
+      console.log('API Response:', JSON.stringify(data, null, 2));
       
       if (!Array.isArray(data)) {
         console.error('API response is not an array:', data);
@@ -43,38 +44,15 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
       console.log('Looking for meal type:', mealType);
       console.log('Total recipes loaded:', data.length);
       
-      // Log detailed information about each recipe
-      data.forEach((recipe, index) => {
-        console.log(`\nRecipe ${index + 1}:`);
-        console.log('Name:', recipe.name);
-        console.log('ID:', recipe.id);
-        console.log('Meal Types:', recipe.mealTypes);
-        console.log('Meal Types Type:', typeof recipe.mealTypes);
-        console.log('Meal Types Array?', Array.isArray(recipe.mealTypes));
-        if (Array.isArray(recipe.mealTypes)) {
-          console.log('Meal Types Length:', recipe.mealTypes.length);
-          recipe.mealTypes.forEach((type, i) => {
-            console.log(`  Meal Type ${i + 1}:`, type);
-            console.log(`  Type of meal type:`, typeof type);
-            console.log(`  Trimmed:`, type.trim());
-            console.log(`  Uppercase:`, type.toUpperCase());
-          });
-        }
-      });
-      
       // Filter recipes by exact meal type match
       const filteredRecipes = data.filter(recipe => {
         if (!recipe.mealTypes) {
           console.log('Recipe missing mealTypes:', recipe);
           return false;
         }
-        if (!Array.isArray(recipe.mealTypes)) {
-          console.log('Recipe mealTypes is not an array:', recipe.mealTypes);
-          return false;
-        }
         const hasMatchingType = recipe.mealTypes.some(type => {
-          const match = type.trim().toUpperCase() === mealType.trim().toUpperCase();
-          console.log(`Comparing "${type.trim()}" with "${mealType.trim()}": ${match}`);
+          const match = type.toUpperCase() === mealType.toUpperCase();
+          console.log(`Comparing ${type} with ${mealType}: ${match}`);
           return match;
         });
         console.log(`Recipe ${recipe.name} has matching type: ${hasMatchingType}`);
@@ -94,6 +72,13 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
       setLoading(false);
     }
   };
+
+  const filteredRecipes = useMemo(() => {
+    if (!searchText) return savedRecipes;
+    return savedRecipes.filter(recipe => 
+      recipe.name.toLowerCase().startsWith(searchText.toLowerCase())
+    );
+  }, [savedRecipes, searchText]);
 
   const renderRecipeItem = ({ item }: { item: RecipeDto }) => (
     <TouchableOpacity
@@ -135,19 +120,30 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
+
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search recipes..."
+              value={searchText}
+              onChangeText={setSearchText}
+            />
+          </View>
           
           {loading ? (
             <View style={styles.loadingContainer}>
               <Text style={styles.loadingText}>Loading recipes...</Text>
             </View>
-          ) : savedRecipes.length === 0 ? (
+          ) : filteredRecipes.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No saved recipes available for {mealType}</Text>
+              <Text style={styles.emptyText}>
+                {searchText ? 'No recipes found' : 'No saved recipes available for ' + mealType}
+              </Text>
             </View>
           ) : (
             <View style={styles.listContainer}>
               <FlatList
-                data={savedRecipes}
+                data={filteredRecipes}
                 renderItem={renderRecipeItem}
                 keyExtractor={(item) => item.id}
                 style={styles.list}
@@ -192,6 +188,17 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  searchInput: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
   },
   modalTitle: {
     fontSize: 18,
