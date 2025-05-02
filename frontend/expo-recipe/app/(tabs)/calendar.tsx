@@ -45,6 +45,7 @@ export default function CalendarScreen() {
       ...mealPlan,
       [selectedMealType.toLowerCase()]: recipe.id,
       [`${selectedMealType.toLowerCase()}Recipe`]: recipe,
+      [`${selectedMealType.toLowerCase()}RecipeName`]: recipe.name,
     };
 
     try {
@@ -65,7 +66,9 @@ export default function CalendarScreen() {
         <TouchableOpacity
           style={styles.mealInput}
           onPress={() => {
-            setSelectedMealType(mealType.toUpperCase() as MealType);
+            const mealTypeUpperCase = mealType.toUpperCase() as MealType;
+            console.log('Setting meal type:', mealTypeUpperCase);
+            setSelectedMealType(mealTypeUpperCase);
             setModalVisible(true);
           }}
         >

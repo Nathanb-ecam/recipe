@@ -32,7 +32,7 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
     try {
       console.log('Loading recipes for IDs:', user.recipesIds);
       const data = await api.getRecipesFromIds(user.recipesIds);
-      console.log('API Response:', JSON.stringify(data, null, 2));
+      console.log('Raw API Response:', JSON.stringify(data, null, 2));
       
       if (!Array.isArray(data)) {
         console.error('API response is not an array:', data);
@@ -41,6 +41,26 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
       }
 
       console.log('Looking for meal type:', mealType);
+      console.log('Total recipes loaded:', data.length);
+      
+      // Log detailed information about each recipe
+      data.forEach((recipe, index) => {
+        console.log(`\nRecipe ${index + 1}:`);
+        console.log('Name:', recipe.name);
+        console.log('ID:', recipe.id);
+        console.log('Meal Types:', recipe.mealTypes);
+        console.log('Meal Types Type:', typeof recipe.mealTypes);
+        console.log('Meal Types Array?', Array.isArray(recipe.mealTypes));
+        if (Array.isArray(recipe.mealTypes)) {
+          console.log('Meal Types Length:', recipe.mealTypes.length);
+          recipe.mealTypes.forEach((type, i) => {
+            console.log(`  Meal Type ${i + 1}:`, type);
+            console.log(`  Type of meal type:`, typeof type);
+            console.log(`  Trimmed:`, type.trim());
+            console.log(`  Uppercase:`, type.toUpperCase());
+          });
+        }
+      });
       
       // Filter recipes by exact meal type match
       const filteredRecipes = data.filter(recipe => {
@@ -48,10 +68,20 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
           console.log('Recipe missing mealTypes:', recipe);
           return false;
         }
-        console.log('Recipe:', recipe.name, 'Meal types:', recipe.mealTypes);
-        return recipe.mealTypes.includes(mealType);
+        if (!Array.isArray(recipe.mealTypes)) {
+          console.log('Recipe mealTypes is not an array:', recipe.mealTypes);
+          return false;
+        }
+        const hasMatchingType = recipe.mealTypes.some(type => {
+          const match = type.trim().toUpperCase() === mealType.trim().toUpperCase();
+          console.log(`Comparing "${type.trim()}" with "${mealType.trim()}": ${match}`);
+          return match;
+        });
+        console.log(`Recipe ${recipe.name} has matching type: ${hasMatchingType}`);
+        return hasMatchingType;
       });
       
+      console.log('Filtered recipes count:', filteredRecipes.length);
       console.log('Filtered recipes:', filteredRecipes);
       setSavedRecipes(filteredRecipes);
     } catch (error) {
@@ -78,7 +108,9 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
         style={styles.recipeImage}
       />
       <View style={styles.recipeInfo}>
-        <Text style={styles.recipeName}>{item.name}</Text>
+        <Text style={styles.recipeName} numberOfLines={1} ellipsizeMode="tail">
+          {item.name}
+        </Text>
         {item.duration && (
           <Text style={styles.recipeDuration}>
             {item.duration.value} {item.duration.unit}
@@ -97,22 +129,33 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Select {mealType} Recipe</Text>
+          <View style={styles.headerContainer}>
+            <Text style={styles.modalTitle}>Select {mealType} Recipe</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+          
           {loading ? (
-            <Text>Loading recipes...</Text>
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading recipes...</Text>
+            </View>
           ) : savedRecipes.length === 0 ? (
-            <Text>No saved recipes available for {mealType}</Text>
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No saved recipes available for {mealType}</Text>
+            </View>
           ) : (
-            <FlatList
-              data={savedRecipes}
-              renderItem={renderRecipeItem}
-              keyExtractor={(item) => item.id}
-              style={styles.list}
-            />
+            <View style={styles.listContainer}>
+              <FlatList
+                data={savedRecipes}
+                renderItem={renderRecipeItem}
+                keyExtractor={(item) => item.id}
+                style={styles.list}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+              />
+            </View>
           )}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -128,54 +171,100 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '90%',
-    maxHeight: '80%',
+    height: '60%',
     backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
+    color: '#333',
+  },
+  listContainer: {
+    flex: 1,
   },
   list: {
     flex: 1,
   },
+  listContent: {
+    paddingRight: 8,
+  },
   recipeItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    padding: 12,
+    marginBottom: 8,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
   },
   recipeImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 12,
   },
   recipeInfo: {
     flex: 1,
+    marginRight: 8,
   },
   recipeName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
   },
   recipeDuration: {
     fontSize: 14,
     color: '#666',
   },
   closeButton: {
-    marginTop: 20,
-    padding: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     backgroundColor: '#007AFF',
-    borderRadius: 5,
-    alignItems: 'center',
+    borderRadius: 6,
   },
   closeButtonText: {
     color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 }); 
