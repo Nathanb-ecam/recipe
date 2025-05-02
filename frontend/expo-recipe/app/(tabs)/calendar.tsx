@@ -56,8 +56,9 @@ export default function CalendarScreen() {
   };
 
   const renderMealInput = (mealType: keyof DailyMealPlan, label: string) => {
-    const recipe = mealPlan?.[`${mealType}Recipe` as keyof DailyMealPlan] as RecipeDto | undefined;
     const recipeId = mealPlan?.[mealType];
+    const recipeName = mealPlan?.[`${mealType}RecipeName` as keyof DailyMealPlan];
+    console.log('Rendering meal input:', { mealType, recipeId, recipeName });
     return (
       <View style={styles.mealInputContainer}>
         <Text style={styles.mealLabel}>{label}</Text>
@@ -69,7 +70,7 @@ export default function CalendarScreen() {
           }}
         >
           <Text style={styles.mealText}>
-            {recipe?.name || (recipeId && recipeId !== '' ? 'Loading recipe...' : 'Select recipe')}
+            {recipeName || (recipeId && recipeId !== '' ? 'Loading recipe...' : 'Select recipe')}
           </Text>
         </TouchableOpacity>
       </View>

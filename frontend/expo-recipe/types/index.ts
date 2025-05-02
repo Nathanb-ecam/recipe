@@ -59,7 +59,7 @@ export interface DailyMealPlan {
   breakfast: string;
   lunch: string;
   dinner: string;
-  breakfastRecipe?: RecipeDto;
-  lunchRecipe?: RecipeDto;
-  dinnerRecipe?: RecipeDto;
+  breakfastRecipeName?: string;
+  lunchRecipeName?: string;
+  dinnerRecipeName?: string;
 } 
