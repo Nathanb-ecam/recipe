@@ -1,12 +1,13 @@
-import { CalendarItem, CalendarUpdateRequest } from '../types/calendar';
-import { getAccessToken } from './authUtils';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.33:8080/api/v1';
+import { CalendarItem, CalendarUpdateRequest, MealEvent } from '../types/calendar';
+import { getAccessToken, getTenantId } from './authUtils';
+import { recipeApi } from './recipeApi';
+import { API_URL } from './config';
 
 export const calendarApi = {
   async getMealPlan(date: string): Promise<CalendarItem> {
     const token = await getAccessToken();
-    const response = await fetch(`${API_URL}/users/${token}/calendar?date=${date}`, {
+    const tenantId = await getTenantId();
+    const response = await fetch(`${API_URL}/users/${tenantId}/calendar/${date}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -21,12 +22,29 @@ export const calendarApi = {
       }
       throw new Error('Failed to fetch meal plan');
     }
-    return response.json();
+    const calendarItem = await response.json();
+    
+    // Fetch recipe details for each meal event
+    if (calendarItem.mealEvents?.length > 0) {
+      // Sort mealEvents by hourMinString ("HH:mm")
+      calendarItem.mealEvents.sort((a: MealEvent, b: MealEvent) => a.hourMinString.localeCompare(b.hourMinString));
+      const recipeIds = calendarItem.mealEvents.map((event: MealEvent) => event.recipeId);
+      const recipes = await recipeApi.getRecipesFromIds(recipeIds);
+      
+      // Map recipe names to meal events
+      calendarItem.mealEvents = calendarItem.mealEvents.map((event: MealEvent) => ({
+        ...event,
+        recipeName: recipes.find(recipe => recipe.id === event.recipeId)?.name || 'No recipe selected'
+      }));
+    }
+    
+    return calendarItem;
   },
 
-  async updateMealPlan(date: string, updateRequest: CalendarUpdateRequest): Promise<CalendarItem> {
+  async updateMealPlan(updateRequest: CalendarUpdateRequest): Promise<CalendarItem> {
+    const tenantId = await getTenantId();
     const token = await getAccessToken();
-    const response = await fetch(`${API_URL}/users/${token}/calendar`, {
+    const response = await fetch(`${API_URL}/users/${tenantId}/calendar`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,

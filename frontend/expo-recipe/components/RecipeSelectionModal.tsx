@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, Image, TextInput } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { api } from '../services/api';
 import { RecipeDto, MealType } from '../types/recipe';
 import { useAuth } from '../contexts/AuthContext';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { FontAwesome } from '@expo/vector-icons';
 
 type RecipeSelectionModalProps = {
   visible: boolean;
@@ -17,8 +19,11 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [selectedTime, setSelectedTime] = useState(new Date());
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<RecipeDto | null>(null);
   const { user } = useAuth();
+
+  const mealTypes: MealType[] = ['BREAKFAST', 'LUNCH', 'DINNER'];
 
   useEffect(() => {
     if (visible) {
@@ -58,11 +63,24 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
   };
 
   const filteredRecipes = useMemo(() => {
-    if (!searchText) return savedRecipes;
-    return savedRecipes.filter(recipe => 
-      recipe.name.toLowerCase().startsWith(searchText.toLowerCase())
-    );
-  }, [savedRecipes, searchText]);
+    let filtered = savedRecipes;
+    
+    // Apply meal type filter
+    if (selectedMealType) {
+      filtered = filtered.filter(recipe => 
+        recipe.mealTypes?.some(type => type === selectedMealType)
+      );
+    }
+    
+    // Apply search text filter
+    if (searchText) {
+      filtered = filtered.filter(recipe => 
+        recipe.name.toLowerCase().startsWith(searchText.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [savedRecipes, searchText, selectedMealType]);
 
   const handleTimeChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     if (selectedDate) {
@@ -70,21 +88,31 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
     }
   };
 
-  const handleTimeConfirm = () => {
-    setShowTimePicker(false);
+  const handleRecipeSelect = (recipe: RecipeDto) => {
+    setSelectedRecipe(recipe);
   };
 
-  const handleRecipeSelect = (recipe: RecipeDto) => {
-    const hour = selectedTime.getHours().toString().padStart(2, '0');
-    const minute = selectedTime.getMinutes().toString().padStart(2, '0');
-    const hourMinString = `${hour}h${minute}`;
-    onSelect(recipe, hourMinString);
+  const handleCreate = () => {
+    if (selectedRecipe && selectedTime) {
+      const hour = selectedTime.getHours().toString().padStart(2, '0');
+      const minute = selectedTime.getMinutes().toString().padStart(2, '0');
+      const hourMinString = `${hour}:${minute}`;
+      onSelect(selectedRecipe, hourMinString);
+      onClose();
+    }
+  };
+
+  const handleClose = () => {
+    setSelectedRecipe(null);
     onClose();
   };
 
   const renderRecipeItem = ({ item }: { item: RecipeDto }) => (
     <TouchableOpacity
-      style={styles.recipeItem}
+      style={[
+        styles.recipeItem,
+        selectedRecipe?.id === item.id && styles.recipeItemSelected
+      ]}
       onPress={() => handleRecipeSelect(item)}
     >
       <Image
@@ -109,56 +137,58 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
       visible={visible}
       animationType="slide"
       transparent={true}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <View style={styles.headerContainer}>
             <Text style={styles.modalTitle}>Select Recipe</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.timePickerContainer}>
-            <Text style={styles.timeLabel}>Time:</Text>
-            <TouchableOpacity
-              style={styles.timeButton}
-              onPress={() => setShowTimePicker(true)}
-            >
-              <Text style={styles.timeText}>
-                {selectedTime.getHours().toString().padStart(2, '0')}:
-                {selectedTime.getMinutes().toString().padStart(2, '0')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {showTimePicker && (
-            <View style={styles.timePickerWrapper}>
+            <View style={styles.timePickerButton}>
               <DateTimePicker
                 value={selectedTime}
                 mode="time"
                 is24Hour={true}
                 display="spinner"
                 onChange={handleTimeChange}
+                style={{ backgroundColor: 'transparent' }}
+                textColor="#000"
               />
-              <TouchableOpacity
-                style={styles.confirmButton}
-                onPress={handleTimeConfirm}
-              >
-                <Text style={styles.confirmButtonText}>Done</Text>
-              </TouchableOpacity>
             </View>
-          )}
+          </View>
 
-          <View style={styles.searchContainer}>
+          <View style={styles.mealTypeContainer}>
+            <View style={styles.mealTypeButtons}>
+              {mealTypes.map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.mealTypeButton,
+                    selectedMealType === type && styles.mealTypeButtonSelected
+                  ]}
+                  onPress={() => setSelectedMealType(selectedMealType === type ? null : type)}
+                >
+                  <Text style={[
+                    styles.mealTypeButtonText,
+                    selectedMealType === type && styles.mealTypeButtonTextSelected
+                  ]}>
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
               placeholder="Search recipes..."
               value={searchText}
               onChangeText={setSearchText}
             />
-          </View>
+          </View> */}
           
           {loading ? (
             <View style={styles.loadingContainer}>
@@ -182,6 +212,25 @@ export const RecipeSelectionModal = ({ visible, onClose, onSelect, mealType }: R
               />
             </View>
           )}
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleClose}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.createButton,
+                !selectedRecipe && styles.createButtonDisabled
+              ]}
+              onPress={handleCreate}
+              disabled={!selectedRecipe}
+            >
+              <Text style={styles.createButtonText}>Add</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -197,7 +246,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '90%',
-    height: '60%',
+    height: '80%',
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 16,
@@ -209,6 +258,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    overflow: 'hidden',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -218,36 +268,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-  },
-  timePickerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  timeLabel: {
-    fontSize: 16,
-    marginRight: 12,
-  },
-  timeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#f8f8f8',
-    borderRadius: 8,
-  },
-  timeText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  searchContainer: {
-    marginBottom: 16,
-  },
-  searchInput: {
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
   },
   modalTitle: {
     fontSize: 18,
@@ -271,6 +291,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
   },
+  recipeItemSelected: {
+    borderWidth: 2,
+    borderColor: '#FFD700',
+  },
   recipeImage: {
     width: 60,
     height: 60,
@@ -292,15 +316,12 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   closeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#FFD700',
-    borderRadius: 6,
-  },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f8f8f8',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingContainer: {
     flex: 1,
@@ -323,18 +344,90 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-  timePickerWrapper: {
+  timePickerContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 16,
+    height: 120,
+    overflow: 'hidden',
+  },
+  timePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    backgroundColor: '#fff',
+    borderRadius: 4,
+    height: 100,
+    overflow: 'hidden',
+  },
+  timePickerWrapper: {
+    backgroundColor: '#fff',
+    height: '100%',
+    width: '100%',
+  },
+  timePickerText: {
+    marginRight: 8,
+    fontSize: 16,
+  },
+  mealTypeContainer: {
     marginBottom: 16,
   },
-  confirmButton: {
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginTop: 8,
+  mealTypeButtons: {
+    flexDirection: 'row',
+    gap: 8,
   },
-  confirmButtonText: {
+  mealTypeButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  mealTypeButtonSelected: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#FFD700',
+  },
+  mealTypeButtonText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  mealTypeButtonTextSelected: {
+    color: '#FFD700',
+    fontWeight: '600',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#f8f8f8',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  createButton: {
+    flex: 1,
+    backgroundColor: '#FFD700',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  createButtonDisabled: {
+    opacity: 0.5,
+  },
+  createButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',

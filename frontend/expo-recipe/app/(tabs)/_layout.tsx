@@ -33,30 +33,31 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="recipes"
+        name="index"
         options={{
-          title: 'Recipes',
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="list" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="saved"
-        options={{
-          title: 'Saved',
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="bookmark" color={color} />
-          ),
+          title: 'Home',
+          tabBarIcon: ({ color }) => <FontAwesome name="home" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
           title: 'Calendar',
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="calendar" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <FontAwesome name="calendar" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="saved"
+        options={{
+          title: 'Saved',
+          tabBarIcon: ({ color }) => <FontAwesome name="bookmark" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="grocery"
+        options={{
+          title: 'Groceries',
+          tabBarIcon: ({ color }) => <FontAwesome name="shopping-cart" size={24} color={color} />,
         }}
       />
     </Tabs>

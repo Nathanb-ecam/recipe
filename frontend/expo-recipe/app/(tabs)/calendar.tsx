@@ -12,7 +12,11 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 
 export default function CalendarScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [calendarItem, setCalendarItem] = useState<CalendarItem | null>(null);
+  const [calendarItem, setCalendarItem] = useState<CalendarItem>({
+    id: '',
+    date: '',
+    mealEvents: [],
+  });
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const { user } = useAuth();
@@ -23,10 +27,30 @@ export default function CalendarScreen() {
 
   const loadMealPlan = async () => {
     try {
+      setLoading(true);
       const data = await calendarApi.getMealPlan(selectedDate);
-      setCalendarItem(data);
+      console.log('Fetched meal plan:', JSON.stringify(data, null, 2));
+      
+      // Ensure mealEvents is an array and has recipe names
+      const mealEvents = (data.mealEvents || []).map(event => ({
+        ...event,
+        recipeName: event.recipeName || 'No recipe selected'
+      }));
+
+      setCalendarItem({
+        id: data.id || '',
+        date: selectedDate,
+        mealEvents,
+      });
     } catch (error: any) {
       console.error('Error loading meal plan:', error);
+      setCalendarItem({
+        id: '',
+        date: selectedDate,
+        mealEvents: [],
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,17 +64,21 @@ export default function CalendarScreen() {
     };
 
     const updatedMealEvents = [...calendarItem.mealEvents, newMealEvent];
+    // Sort mealEvents by hourMinString ("HH:mm")
+    updatedMealEvents.sort((a, b) => a.hourMinString.localeCompare(b.hourMinString));
+
     const updatedCalendarItem = {
       ...calendarItem,
       mealEvents: updatedMealEvents,
     };
 
     try {
-      await calendarApi.updateMealPlan(selectedDate, {
+      await calendarApi.updateMealPlan({
         date: selectedDate,
         mealEvents: updatedMealEvents,
       });
       setCalendarItem(updatedCalendarItem);
+      setModalVisible(false);
     } catch (error) {
       console.error('Error updating meal plan:', error);
     }
@@ -63,7 +91,7 @@ export default function CalendarScreen() {
     updatedMealEvents.splice(index, 1);
 
     try {
-      await calendarApi.updateMealPlan(selectedDate, {
+      await calendarApi.updateMealPlan({
         date: selectedDate,
         mealEvents: updatedMealEvents,
       });
@@ -79,7 +107,7 @@ export default function CalendarScreen() {
   const renderMealEvent = ({ item, index }: { item: MealEvent; index: number }) => (
     <View style={styles.mealEventContainer}>
       <Text style={styles.mealTime}>{item.hourMinString}</Text>
-      <Text style={styles.recipeName}>{item.recipeName || 'Loading...'}</Text>
+      <Text style={styles.recipeName}>{item.recipeName || 'No recipe selected'}</Text>
       <TouchableOpacity
         style={styles.deleteButton}
         onPress={() => handleDeleteMealEvent(index)}
@@ -91,6 +119,9 @@ export default function CalendarScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+    
+        <View style={{ height: 10 }} />
+
       <Calendar
         onDayPress={(day: { dateString: string }) => setSelectedDate(day.dateString)}
         markedDates={{
@@ -103,6 +134,9 @@ export default function CalendarScreen() {
           textDayHeaderFontWeight: 'bold',
         }}
       />
+
+    <View style={{ height: 10 }} />
+
       <View style={styles.content}>
         <View style={styles.headerContainer}>
           <Text style={styles.title}>Meal Events</Text>

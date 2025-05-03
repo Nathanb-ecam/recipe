@@ -1,7 +1,6 @@
 import { RecipeDto } from '../types/recipe';
 import { getAccessToken } from './authUtils';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.33:8080/api/v1';
+import { API_URL } from './config';
 
 export const recipeApi = {
   async getCompactRecipes(): Promise<RecipeDto[]> {
