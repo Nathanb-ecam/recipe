@@ -11,7 +11,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     try {
       await login(email, password);
-      router.replace('/(tabs)/recipes');
+      router.replace('/(tabs)/home');
     } catch (error) {
       Alert.alert('Error', 'Failed to login. Please check your credentials.');
     }

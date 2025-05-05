@@ -120,7 +120,7 @@ export default function CalendarScreen() {
   return (
     <SafeAreaView style={styles.container}>
     
-        <View style={{ height: 10 }} />
+       <View style={{ height: 10 }} />
 
       <Calendar
         onDayPress={(day: { dateString: string }) => setSelectedDate(day.dateString)}

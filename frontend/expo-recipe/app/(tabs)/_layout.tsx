@@ -33,17 +33,10 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <FontAwesome name="home" size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: 'Calendar',
-          tabBarIcon: ({ color }) => <FontAwesome name="calendar" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -51,6 +44,13 @@ export default function TabLayout() {
         options={{
           title: 'Saved',
           tabBarIcon: ({ color }) => <FontAwesome name="bookmark" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ color }) => <FontAwesome name="calendar" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
