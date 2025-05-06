@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoContentException.class)
     public ResponseEntity<ApiErrorResponse> handleNoItemsFound(NoContentException ex, HttpServletRequest request) {
         var endpoint = request.getRequestURI();
-        var httpStatus = HttpStatus.BAD_REQUEST;
+        var httpStatus = HttpStatus.NOT_FOUND;
         return ResponseEntity.status(httpStatus)
                 .body(new ApiErrorResponse(
                                 httpStatus.value(),
@@ -62,6 +62,8 @@ public class GlobalExceptionHandler {
                         )
                 );
     }
+
+
 
     @ExceptionHandler(DatabaseException.class)
     public ResponseEntity<ApiErrorResponse> handleDatabaseException(DatabaseException ex, HttpServletRequest request) {

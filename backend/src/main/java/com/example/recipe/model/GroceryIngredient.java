@@ -3,12 +3,11 @@ package com.example.recipe.model;
 
 import lombok.Data;
 
-import java.util.List;
-
 @Data
-public class RecipeIngredient {
-    private String ingredientId;
+public class GroceryIngredient {
+    private String ingredientName;
+    private String ingredientType;
     private Amount quantity;
-    //private List<Price> prices;
+    private boolean alreadyBought;
 }
 

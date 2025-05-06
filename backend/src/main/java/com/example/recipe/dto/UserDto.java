@@ -23,5 +23,6 @@ public class UserDto {
     private Role role;
 
     private List<String> recipesIds;
+    private List<String> savedRecipesIds;
     private Grocery grocery;
 }

@@ -3,16 +3,15 @@ package com.example.recipe.entity;
 
 
 import com.example.recipe.entity.lookup.Category;
-import com.example.recipe.model.Amount;
-import com.example.recipe.model.MealType;
-import com.example.recipe.model.RecipeIngredient;
-import com.example.recipe.model.RecipeStep;
+import com.example.recipe.model.*;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,12 +24,16 @@ public class Recipe {
     private String id = UUID.randomUUID().toString();
     private String name;
 
-    private List<MealType> mealTypes;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<MealType> mealTypes = new ArrayList<>();;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<FoodOrigin> foodOrigins = new ArrayList<>();;
 
     private boolean isPublic = false;
 
     private Amount duration;
-    private Amount averagePrice; //= new Amount()
+    private RelativePrice relativePrice; //= new Amount()
     private String description;
     private String imageUrl;
     private List<String> categoryIds;

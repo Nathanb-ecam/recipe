@@ -15,10 +15,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 
 @Data
@@ -37,7 +34,12 @@ public class User implements UserDetails {
     @NotBlank
     private String passwordHash;
 
-    private List<String> recipesIds;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<String> recipesIds = new ArrayList<>();
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<String> savedRecipesIds = new ArrayList<>();
+
     private Grocery grocery;
 
 

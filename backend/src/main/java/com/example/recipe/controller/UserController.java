@@ -2,6 +2,7 @@ package com.example.recipe.controller;
 
 import com.example.recipe.dto.RecipeDto;
 import com.example.recipe.dto.UserDto;
+import com.example.recipe.model.Grocery;
 import com.example.recipe.service.RecipeService;
 import com.example.recipe.service.UserService;
 import jakarta.validation.Valid;
@@ -21,23 +22,74 @@ public class UserController {
     private final RecipeService recipeService;
 
 
-    @PatchMapping("/{id}/updateGrocery")
-    public ResponseEntity<UserDto> updateGroceryForUserWithId(@PathVariable String id, @RequestBody @Valid UserDto updated) {
+    @GetMapping("/{id}/grocery")
+    public ResponseEntity<Grocery> getGroceryForUserWithId(@PathVariable String id) {
+        Grocery grocery = userService.getGroceryForUserWithId(id);
+        return ResponseEntity.ok(grocery);
+    }
+
+
+    @PatchMapping("/{id}/grocery")
+    public ResponseEntity<UserDto> updateGroceryForUserWithId(@PathVariable String id, @RequestBody @Valid Grocery updated) {
         UserDto userDto = userService.updateGroceryForUserWithId(id, updated);
         return ResponseEntity.ok(userDto);
     }
 
-    @PatchMapping("/{id}/updateRecipesIds")
-    public ResponseEntity<UserDto> updateRecipeIdsForUserWithId(@PathVariable String id, @RequestBody @Valid UserDto updated) {
+    @GetMapping("/{tenantId}/user-recipes")
+    public ResponseEntity<List<RecipeDto>> fetchUsersRecipes(@PathVariable String tenantId) {
+        List<RecipeDto> recipes = recipeService.fetchUsersRecipes(tenantId);
+        return ResponseEntity.ok(recipes);
+    }
+
+    @PostMapping("/{tenantId}/user-recipes/add")
+    public ResponseEntity<UserDto> addRecipeToUserRecipes(
+            @PathVariable String tenantId,
+            @RequestParam String recipeId) {
+
+        UserDto updatedUser = recipeService.addRecipeToUserRecipes(tenantId, recipeId);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+
+    @DeleteMapping("/{tenantId}/user-recipes/pop")
+    public ResponseEntity<UserDto> popLastRecipeFromUser(@PathVariable String tenantId) {
+        UserDto updatedUser = recipeService.popLastUserRecipe(tenantId);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+
+    @GetMapping("/{tenantId}/saved-recipes")
+    public ResponseEntity<List<RecipeDto>> fetchUserSavedRecipes(@PathVariable String tenantId) {
+        List<RecipeDto> recipes = recipeService.fetchUsersSavedRecipes(tenantId);
+        return ResponseEntity.ok(recipes);
+    }
+
+    @PatchMapping("/{id}/saved-recipes/add")
+    public ResponseEntity<UserDto> addRecipeIdToUser(
+            @PathVariable String id,
+            @RequestParam String recipeId
+    ) {
+        UserDto updatedUser = userService.addRecipeIdToUser(id, recipeId);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @PatchMapping("/{id}/saved-recipes/remove")
+    public ResponseEntity<UserDto> removeRecipeIdFromUser(
+            @PathVariable String id,
+            @RequestParam String recipeId
+    ) {
+        UserDto updatedUser = userService.removeRecipeIdFromUser(id, recipeId);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+
+    @PatchMapping("/{id}/saved-recipes/update")
+    public ResponseEntity<UserDto> updateRecipeIdsOfUser(@PathVariable String id, @RequestBody @Valid UserDto updated) {
         UserDto userDto = userService.updateRecipesIdsForUserWithId(id, updated);
         return ResponseEntity.ok(userDto);
     }
 
-    @GetMapping("/{id}/saved-recipes")
-    public ResponseEntity<List<RecipeDto>> getRecipesForUserWithId(@PathVariable String id) {
-        List<RecipeDto> recipes = recipeService.fetchUsersRecipes(id);
-        return ResponseEntity.ok(recipes);
-    }
+
 
     @GetMapping("/details")
     public ResponseEntity<UserDto> getUserDetails() {

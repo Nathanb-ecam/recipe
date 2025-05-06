@@ -4,6 +4,7 @@ import com.example.recipe.config.JwtService;
 import com.example.recipe.entity.TemporaryUser;
 import com.example.recipe.entity.User;
 import com.example.recipe.exception.OtpException;
+import com.example.recipe.mapper.UserMapper;
 import com.example.recipe.model.Role;
 import com.example.recipe.repository.TemporaryUserRepository;
 import com.example.recipe.repository.UserRepository;
@@ -37,6 +38,7 @@ public class AuthService {
     private final OtpService otpService;
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     public AuthenticationResponse authenticate(AuthenticationRequest request){
         authenticationManager.authenticate(
@@ -54,6 +56,7 @@ public class AuthService {
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
+                .user(userMapper.toDtoBasicInfo(user))
                 .build();
     }
 

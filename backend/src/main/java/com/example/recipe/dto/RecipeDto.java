@@ -1,9 +1,7 @@
 package com.example.recipe.dto;
 
-import com.example.recipe.model.Amount;
-import com.example.recipe.model.MealType;
-import com.example.recipe.model.RecipeIngredient;
-import com.example.recipe.model.RecipeStep;
+import com.example.recipe.model.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,12 +18,18 @@ public class RecipeDto {
     private String name;
     private Amount duration;
     private String description;
+
+    @JsonIgnore
     private boolean isPublic;
-    private List<MealType> mealTypes;
+
+    private List<MealType> mealTypes; // BREAKFAST, LUNCH or DINNER
+    private List<FoodOrigin> foodOrigins; // ITALIAN, FRENCH, THAI, etc
 
     private String imageUrl;
     private List<String> categoryIds;
     private List<RecipeIngredient> ingredients;
     private List<RecipeStep> steps;
-    private Amount averagePrice;
+    private RelativePrice relativePrice;
+
+    private String tenantId;
 }

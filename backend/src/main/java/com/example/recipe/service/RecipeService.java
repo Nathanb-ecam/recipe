@@ -9,6 +9,10 @@ import com.example.recipe.exception.GenericException;
 import com.example.recipe.exception.NoContentException;
 import com.example.recipe.exception.UserIsNotTheResourceOwnerException;
 import com.example.recipe.mapper.RecipeMapper;
+import com.example.recipe.mapper.UserMapper;
+import com.example.recipe.model.FoodOrigin;
+import com.example.recipe.model.MealType;
+import com.example.recipe.model.RelativePrice;
 import com.example.recipe.repository.RecipeRepository;
 import com.example.recipe.repository.UserRepository;
 import com.example.recipe.utils.ReflectionUtils;
@@ -21,6 +25,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +35,7 @@ public class RecipeService implements CrudService<RecipeDto> {
     private final RecipeMapper recipeMapper;
     private final RecipeRepository recipeRepository;
     private final UserService userService;
+    private final UserMapper userMapper;
     private final UserRepository userRepository;
 
     public void CheckIfRecipeBelongsToUser(String recipeId){
@@ -42,17 +48,118 @@ public class RecipeService implements CrudService<RecipeDto> {
         if(!tenantId.equals(currentUserId)) throw new UserIsNotTheResourceOwnerException("UserId doesnt match the resource tenantId");
     }
 
-    public List<RecipeDto> fetchUsersRecipes(String userId){
-        userService.CheckUserAllowedToAccessResource(userId);
+    public List<RecipeDto> fetchUsersRecipes(String tenantId) {
+        // First, check if the user is allowed to access resources
+        userService.CheckUserAllowedToAccessResource(tenantId);
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserIsNotTheResourceOwnerException("User doesn't exist"));
+        // Fetch the user entity based on tenantId
+        User user = userRepository.findById(tenantId)
+                .orElseThrow(() -> new UserIsNotTheResourceOwnerException("User with this tenantId doesn't exist"));
+
+        // Get the list of recipe IDs the user has
         List<String> recipesIds = user.getRecipesIds();
 
-        return recipeRepository
-                /* TODO return only the recipes if they are public or owned by the user */
-                .findAllById(recipesIds)
-                .stream()
+        // Fetch all the recipes based on the IDs
+        List<Recipe> recipes = recipeRepository.findAllById(recipesIds);
+
+        // Filter the recipes based on the tenantId (tenantId should match the recipe's tenantId)
+        List<Recipe> filteredRecipes = recipes.stream()
+                .filter(recipe -> recipe.getTenantId().equals(tenantId))  // Ensure recipe's tenantId matches the provided tenantId
+                .toList();
+
+        // Map the filtered recipes to RecipeDto and return
+        return filteredRecipes.stream()
                 .map(recipeMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+
+    public UserDto addRecipeToUserRecipes(String userId, String recipeId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.getRecipesIds().add(recipeId);
+        userRepository.save(user);
+        return userMapper.toDto(user);
+    }
+
+
+    public UserDto popLastUserRecipe(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoContentException("User not found"));
+
+        List<String> recipes = user.getRecipesIds();
+        if (!recipes.isEmpty()) {
+            recipes.removeLast();
+            userRepository.save(user);
+        }
+
+        return userMapper.toDto(user);
+    }
+
+
+    public List<RecipeDto> fetchUsersSavedRecipes(String tenantId) {
+        // First, check if the user is allowed to access resources
+        userService.CheckUserAllowedToAccessResource(tenantId);
+
+        // Fetch the user entity based on tenantId
+        User user = userRepository.findById(tenantId)
+                .orElseThrow(() -> new UserIsNotTheResourceOwnerException("User with this tenantId doesn't exist"));
+
+        // Get the list of recipe IDs the user has
+        List<String> recipesIds = user.getSavedRecipesIds();
+
+        // Fetch all the recipes based on the IDs
+        List<Recipe> recipes = recipeRepository.findAllById(recipesIds);
+
+        // Filter the recipes based on the tenantId (tenantId should match the recipe's tenantId)
+        List<Recipe> filteredRecipes = recipes.stream()
+                .filter(recipe -> recipe.getTenantId().equals(tenantId))  // Ensure recipe's tenantId matches the provided tenantId
+                .toList();
+
+        // Map the filtered recipes to RecipeDto and return
+        return filteredRecipes.stream()
+                .map(recipeMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+
+    public List<RecipeDto> getAllWithFilters(Optional<RelativePrice> relativePrice, Optional<FoodOrigin> foodOrigin, Optional<MealType> mealType, Optional<Integer> limit) {
+        List<Recipe> recipes = recipeRepository.findAll();  // Get all recipes from the database
+
+        // Filter by relativePrice if present
+        if (relativePrice!= null && relativePrice.isPresent()) {
+            recipes = recipes.stream()
+                    .filter(recipe -> recipe.getRelativePrice() == relativePrice.get())
+                    .collect(Collectors.toList());
+        }
+
+        // Filter by foodOrigin if present
+        if (foodOrigin!= null && foodOrigin.isPresent()) {
+            String origin = String.valueOf(foodOrigin.get()).toUpperCase();  // Convert to uppercase if needed
+            recipes = recipes.stream()
+                    .filter(recipe -> recipe.getFoodOrigins().stream()
+                            .anyMatch(food -> food.name().equalsIgnoreCase(origin))) // Compare enum values
+                    .collect(Collectors.toList());
+        }
+
+        // Filter by mealType if present
+        if (mealType!= null && mealType.isPresent()) {
+            String type = String.valueOf(mealType.get()).toUpperCase();  // Convert to uppercase if needed
+            recipes = recipes.stream()
+                    .filter(recipe -> recipe.getMealTypes().stream()
+                            .anyMatch(meal -> meal.name().equalsIgnoreCase(type))) // Compare enum values
+                    .collect(Collectors.toList());
+        }
+
+        // Apply limit if present
+        Stream<Recipe> recipeStream = recipes.stream();
+        if (limit.isPresent() && limit.get() > 0) {
+            recipeStream = recipeStream.limit(limit.get());
+        }
+
+        return recipeStream
+                .map(recipeMapper::toCompactDto)
                 .collect(Collectors.toList());
     }
 
@@ -73,6 +180,23 @@ public class RecipeService implements CrudService<RecipeDto> {
         }
 
     }
+
+    public List<RecipeDto> getCompactsByIds(List<String> ids) {
+        try {
+            List<RecipeDto> recipes = recipeRepository
+                    .findAllById(ids)
+                    .stream()
+                    .map(recipeMapper::toCompactDto)
+                    .collect(Collectors.toList());
+            if (recipes.isEmpty()) throw new NoContentException("No recipes found for the given IDs");
+            return recipes;
+        } catch (DataAccessException e) {
+            throw new DatabaseException("Error accessing the database");
+        } catch (Exception e) {
+            throw new GenericException(e.getMessage());
+        }
+    }
+
 
     public RecipeDto getOneById(String id) {
         var currentUserId = userService.getCurrentUserId();
@@ -119,15 +243,41 @@ public class RecipeService implements CrudService<RecipeDto> {
     }
 
     public RecipeDto createOne(RecipeDto recipeDto) {
+        if(recipeDto.getTenantId() != null){
+            userService.CheckUserAllowedToAccessResource(recipeDto.getTenantId());
+        }
+        String id =  recipeDto.getTenantId()!= null ? recipeDto.getTenantId() : userService.getCurrentUserId();
         var recipeEntity = recipeMapper.toEntity(recipeDto);
-        recipeEntity.setTenantId(userService.getCurrentUserId());
+        recipeEntity.setTenantId(id);
         var recipe = recipeRepository.save(recipeEntity);
         return recipeMapper.toDto(recipe);
     }
 
+
+
     public void deleteOneById(String id) {
         CheckIfRecipeBelongsToUser(id);
         recipeRepository.deleteById(id);
+    }
+
+
+
+    public List<RecipeDto> getAllCompact() {
+        try{
+            List<RecipeDto> recipes =  recipeRepository
+                    .findAllByIsPublicTrue()
+                    .stream()
+                    .map(recipeMapper::toCompactDto)
+                    .collect(Collectors.toList());
+            if (recipes.isEmpty()) throw new NoContentException("There are no recipes");
+            return recipes;
+        }catch(DataAccessException e){
+            throw new DatabaseException("Error accessing the database");
+        }
+        catch (Exception e){
+            throw new GenericException(e.getMessage());
+        }
+
     }
 }
 

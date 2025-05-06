@@ -3,9 +3,11 @@ package com.example.recipe.service;
 import com.example.recipe.dto.UserDto;
 import com.example.recipe.entity.Recipe;
 import com.example.recipe.entity.User;
+import com.example.recipe.exception.GenericException;
 import com.example.recipe.exception.NoContentException;
 import com.example.recipe.exception.UserIsNotTheResourceOwnerException;
 import com.example.recipe.mapper.UserMapper;
+import com.example.recipe.model.Grocery;
 import com.example.recipe.repository.RecipeRepository;
 import com.example.recipe.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -46,19 +48,44 @@ public class UserService implements CrudService<UserDto>{
     }
 
 
-/*    public UserDto updateOnePartiallyById(String id , UserDto userDto){
-        Optional<User> existingUser = userRepository.findById(id);
-        if (existingUser.isEmpty()) {
-            throw new NoContentException("User not found");
+    public UserDto addRecipeIdToUser(String userId, String recipeId) {
+        CheckUserAllowedToAccessResource(userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoContentException("User not found"));
+
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new NoContentException("Recipe not found"));
+
+        List<String> recipesIds = user.getRecipesIds();
+        if (recipesIds.contains(recipeId)) {
+            throw new GenericException("Recipe already added to user");
         }
 
-        User userToUpdate = existingUser.get();
-        // Using reflection to update non-null fields from userDto to userToUpdate
-        ReflectionUtils.updateNonNullFields(userDto, userToUpdate);
+        recipesIds.add(recipeId);
+        user.setRecipesIds(recipesIds);
 
-        var user =  userRepository.save(userToUpdate);
-        return userMapper.toDto(user);
-    }*/
+        return userMapper.toDto(userRepository.save(user));
+    }
+
+
+    public UserDto removeRecipeIdFromUser(String userId, String recipeId) {
+        CheckUserAllowedToAccessResource(userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoContentException("User not found"));
+
+        List<String> recipesIds = user.getRecipesIds();
+        if (!recipesIds.contains(recipeId)) {
+            throw new NoContentException("Recipe not found in user's list");
+        }
+
+        recipesIds.remove(recipeId);
+        user.setRecipesIds(recipesIds);
+
+        return userMapper.toDto(userRepository.save(user));
+    }
+
 
     public UserDto updateRecipesIdsForUserWithId(String id, UserDto userDto) {
         /* TODO need to ensure that the user to modify is request by the user itself  */
@@ -86,7 +113,16 @@ public class UserService implements CrudService<UserDto>{
     }
 
 
-    public UserDto updateGroceryForUserWithId(String id, UserDto userDto) {
+    public Grocery getGroceryForUserWithId(String id) {
+        CheckUserAllowedToAccessResource(id);
+
+        return userRepository.findById(id)
+                .map(User::getGrocery)
+                .orElseThrow(() -> new NoContentException("User not found or grocery not set"));
+    }
+
+
+    public UserDto updateGroceryForUserWithId(String id, Grocery updatedGrocery) {
         CheckUserAllowedToAccessResource(id);
 
         Optional<User> existingUser = userRepository.findById(id);
@@ -95,7 +131,7 @@ public class UserService implements CrudService<UserDto>{
         }
         User userToUpdate = existingUser.get();
         // Using reflection to update non-null fields from userDto to userToUpdate
-        userToUpdate.setGrocery(userDto.getGrocery());
+        userToUpdate.setGrocery(updatedGrocery);
 
         var user =  userRepository.save(userToUpdate);
         return userMapper.toDto(user);
@@ -147,5 +183,8 @@ public class UserService implements CrudService<UserDto>{
     public void deleteOneById(String id) {
         userRepository.deleteById(id);
     }
+
+
+
 }
 
