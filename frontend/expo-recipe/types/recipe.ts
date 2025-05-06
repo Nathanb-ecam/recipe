@@ -1,6 +1,10 @@
 export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER';
 
-export type RecipeDto = {
+export type FoodOrigin = 'THAI' | 'CHINESE' | 'FRENCH' | 'ITALIAN' | 'USA' | 'SPANISH';
+
+export type RelativePrice = 'CHEAP' | 'MODERATE' | 'EXPENSIVE';
+
+export interface RecipeDto {
   id: string;
   name: string;
   description?: string;
@@ -9,7 +13,7 @@ export type RecipeDto = {
     value: number;
     unit: string;
   };
-  mealTypes: MealType[];
+  mealTypes: string[];
   isPublic: boolean;
   categoryIds: string[];
   ingredients: {
@@ -30,4 +34,6 @@ export type RecipeDto = {
     value: number;
     unit: string;
   };
-}; 
+  foodOrigins?: FoodOrigin[];
+  relativePrice: RelativePrice;
+} 

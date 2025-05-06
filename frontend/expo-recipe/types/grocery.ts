@@ -4,13 +4,17 @@ export interface Amount {
 }
 
 export interface GroceryIngredient {
-  ingredientName: string;
-  ingredientType: string;
-  quantity: Amount;
+  id?: string;
+ingredientName: string;
+  ingredientType?: string;
+  quantity?: Amount;
+  alreadyBought: boolean;
 }
 
+
+
 export interface Grocery {
-  id: string;
-  userId: string;
-  products: GroceryIngredient[];
+products: GroceryIngredient[];
+  updatedAt: string;
+  
 } 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, FlatList, Image, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, FlatList, Image, Platform } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { calendarApi } from '../../services/calendarApi';
 import { RecipeDto } from '../../types/recipe';
@@ -7,6 +7,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { recipeApi } from '../../services/recipeApi';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const [upcomingMeals, setUpcomingMeals] = useState<any[]>([]);
@@ -62,6 +63,10 @@ export default function HomeScreen() {
     router.push(`/recipe/${recipe.id}`);
   };
 
+  const handleMealPress = (recipeId: string) => {
+    router.push(`/recipe/${recipeId}`);
+  };
+
   const renderMealEvent = (mealEvent: any) => {
     const hour = parseInt(mealEvent.hourMinString.split(':')[0]);
     let lineColor = '#000';
@@ -101,49 +106,37 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
       <ScrollView style={styles.container}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Upcoming Meals</Text>
-          <View style={styles.daysContainer}>
-            {upcomingMeals.map((day, index) => (
-              <View key={index} style={styles.dayColumn}>
-                <Text style={styles.dayTitle}>
-                  {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                </Text>
-                <View style={styles.mealEventsContainer}>
-                  {day.meals?.map((meal: any, mealIndex: number) => (
-                    <View key={mealIndex}>
-                      {renderMealEvent(meal)}
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Popular Recipes</Text>
-          <View style={styles.recipesContainer}>
-            <FlatList
-              data={recipes}
-              renderItem={renderRecipeCard}
-              keyExtractor={(item) => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            />
+          <Text style={styles.sectionTitle}>Create New Recipe</Text>
+          <View style={styles.createRecipeButtons}>
             <TouchableOpacity 
-              style={styles.plusButton}
+              style={styles.createRecipeButton}
               onPress={() => router.push('/recipe/new')}
             >
-              <FontAwesome name="plus" size={24} color="#FFD700" />
+              <FontAwesome name="plus-circle" size={18} color="#000" />
+              <Text style={styles.createRecipeText}>Create your own</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.createRecipeButton}
+              onPress={() => router.push('/recipe/new?source=image')}
+            >
+              <FontAwesome name="camera" size={18} color="#000" />
+              <Text style={styles.createRecipeText}>Create from image</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.createRecipeButton}
+              onPress={() => router.push('/recipe/new?source=link')}
+            >
+              <FontAwesome name="link" size={18} color="#000" />
+              <Text style={styles.createRecipeText}>Create from link</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recipe Suggestions</Text>
+          <Text style={styles.sectionTitle}>Find ideas</Text>
           <View style={styles.ingredientsInputContainer}>
             <TextInput
               style={styles.ingredientsInput}
@@ -162,13 +155,39 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity 
-            style={styles.createRecipeButton}
-            onPress={() => router.push('/recipe/new')}
-          >
-            <FontAwesome name="plus-circle" size={24} color="#FFD700" />
-            <Text style={styles.createRecipeText}>Create New Recipe</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Upcoming Meals</Text>
+          <View style={styles.daysContainer}>
+            {upcomingMeals.map((day, index) => (
+              <View key={index} style={styles.dayColumn}>
+                <Text style={styles.dayTitle}>
+                  {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                </Text>
+                <View style={styles.mealEventsContainer}>
+                  {day.meals?.map((meal: any, mealIndex: number) => (
+                    <TouchableOpacity
+                      key={mealIndex}
+                      onPress={() => handleMealPress(meal.recipeId)}
+                    >
+                      {renderMealEvent(meal)}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Popular Recipes</Text>
+          <View style={styles.recipesContainer}>
+            <FlatList
+              data={recipes}
+              renderItem={renderRecipeCard}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -182,6 +201,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    paddingTop: Platform.OS === 'android' ? 20 : 0,
   },
   section: {
     padding: 16,
@@ -229,12 +249,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mealTime: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     marginBottom: 4,
   },
   recipeName: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
   },
   ingredientsInputContainer: {
@@ -279,14 +299,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  plusButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f8f8f8',
-    justifyContent: 'center',
+  createRecipeButtons: {
+    flexDirection: 'column',
+    gap: 12,
     alignItems: 'center',
-    marginLeft: 16,
   },
   createRecipeButton: {
     flexDirection: 'row',
@@ -295,11 +311,12 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#f8f8f8',
     borderRadius: 8,
+    width: '100%',
+    gap: 8,
   },
   createRecipeText: {
-    marginLeft: 8,
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#FFD700',
+    color: '#000',
   },
 }); 

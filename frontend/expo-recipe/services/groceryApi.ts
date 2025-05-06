@@ -1,9 +1,9 @@
-import { Grocery, IngredientNameWithQuantity } from '../types/grocery';
+import { Grocery, GroceryIngredient } from '../types/grocery';
 import { getAccessToken, getTenantId } from './authUtils';
 import { API_URL } from './config';
 
 export const groceryApi = {
-  async getGroceryList(): Promise<Grocery> {
+  async getGrocery(): Promise<Grocery> {
     const token = await getAccessToken();
     const tenantId = await getTenantId();
     const response = await fetch(`${API_URL}/users/${tenantId}/grocery`, {
@@ -17,11 +17,11 @@ export const groceryApi = {
     return response.json();
   },
 
-  async updateGroceryList(products: IngredientNameWithQuantity[]): Promise<Grocery> {
+  async updateGrocery(products: GroceryIngredient[]): Promise<Grocery> {
     const token = await getAccessToken();
     const tenantId = await getTenantId();
     const response = await fetch(`${API_URL}/users/${tenantId}/grocery`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',

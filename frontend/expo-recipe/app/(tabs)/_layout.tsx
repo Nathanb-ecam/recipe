@@ -40,10 +40,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="saved"
+        name="recipes"
         options={{
-          title: 'Saved',
-          tabBarIcon: ({ color }) => <FontAwesome name="bookmark" size={24} color={color} />,
+          title: 'Recipes',
+          tabBarIcon: ({ color }) => <FontAwesome name="search" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -58,6 +58,13 @@ export default function TabLayout() {
         options={{
           title: 'Groceries',
           tabBarIcon: ({ color }) => <FontAwesome name="shopping-cart" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Account',
+          tabBarIcon: ({ color }) => <FontAwesome name="user" size={24} color={color} />
         }}
       />
     </Tabs>

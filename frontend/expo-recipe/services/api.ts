@@ -4,8 +4,7 @@ import { calendarApi } from './calendarApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { DailyMealPlan } from '../types';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.33:8080/api/v1';
+import { API_URL } from './config';
 
 // Export all API modules under a single namespace
 export const api = {
