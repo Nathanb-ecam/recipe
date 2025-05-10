@@ -34,7 +34,7 @@ public class FileStorageUtils {
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Return the accessible URL (this depends on your server setup)
-            return "/uploads/recipe-cover-images/" + uniqueFileName;
+            return "/recipe-cover-images/" + uniqueFileName;
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to store the image", e);

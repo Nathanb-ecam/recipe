@@ -183,6 +183,22 @@ public class RecipeService implements CrudService<RecipeDto> {
 
     }
 
+    public List<RecipeDto> getByIds(List<String> ids) {
+        try {
+            List<RecipeDto> recipes = recipeRepository
+                    .findAllById(ids)
+                    .stream()
+                    .map(recipeMapper::toDto)
+                    .collect(Collectors.toList());
+            if (recipes.isEmpty()) throw new NoContentException("No recipes found for the given IDs");
+            return recipes;
+        } catch (DataAccessException e) {
+            throw new DatabaseException("Error accessing the database");
+        } catch (Exception e) {
+            throw new GenericException(e.getMessage());
+        }
+    }
+
     public List<RecipeDto> getCompactsByIds(List<String> ids) {
         try {
             List<RecipeDto> recipes = recipeRepository

@@ -16,7 +16,10 @@ import java.util.List;
 public class RecipeDto {
     private String id;
     private String name;
-    private Amount duration;
+    /*private Amount duration;*/
+    private String prepTimeMin;
+    private String cookTimeMin;
+
     private String description;
 
     @JsonIgnore
@@ -28,7 +31,8 @@ public class RecipeDto {
     private String imageUrl;
     private List<String> categoryIds;
     private List<RecipeIngredient> ingredients;
-    private List<RecipeStep> steps;
+    /*private List<RecipeStep> steps;*/
+    private List<String> steps;
     private RelativePrice relativePrice;
 
     private String tenantId;

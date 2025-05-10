@@ -73,6 +73,12 @@ public class RecipeController {
         return ResponseEntity.ok(recipes);
     }
 
+    @PostMapping("/batch")
+    public ResponseEntity<List<RecipeDto>> getRecipesBatch(@RequestBody @Valid List<String> recipesIds) {
+        List<RecipeDto> recipes = recipeService.getByIds(recipesIds);
+        return ResponseEntity.ok(recipes);
+    }
+
     @GetMapping("/compact")
     public ResponseEntity<List<RecipeDto>> getAllRecipesCompact() {
         List<RecipeDto> recipes = recipeService.getAllCompact();

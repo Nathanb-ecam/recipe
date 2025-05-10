@@ -4,5 +4,4 @@ public enum RelativePrice {
     CHEAP,
     MODERATE,
     EXPENSIVE,
-    UNDEFINED
 }

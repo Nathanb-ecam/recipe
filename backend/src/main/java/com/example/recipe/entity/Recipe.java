@@ -32,13 +32,16 @@ public class Recipe {
 
     private boolean isPublic = false;
 
-    private Amount duration;
+    /*private Amount duration;*/
+    private String prepTimeMin;
+    private String cookTimeMin;
     private RelativePrice relativePrice; //= new Amount()
     private String description;
     private String imageUrl;
     private List<String> categoryIds;
     private List<RecipeIngredient> ingredients;
-    private List<RecipeStep> steps;
+    /*private List<RecipeStep> steps;*/
+    private List<String> steps;
     private String tenantId;
 }
 
