@@ -48,6 +48,7 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(req ->
                         req
+                                .requestMatchers("/uploads/**").permitAll()
                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow OPTIONS method
                                 .requestMatchers(HttpMethod.POST, "/api/v1/recipes/with-cover-image").authenticated()
                                 .requestMatchers("/api/v1/auth/**")  // Permit all requests to /api/v1/auth

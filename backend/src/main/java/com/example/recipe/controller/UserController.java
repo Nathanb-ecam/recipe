@@ -5,10 +5,13 @@ import com.example.recipe.dto.UserDto;
 import com.example.recipe.model.Grocery;
 import com.example.recipe.service.RecipeService;
 import com.example.recipe.service.UserService;
+import com.example.recipe.utils.FileStorageUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -33,6 +36,29 @@ public class UserController {
     public ResponseEntity<UserDto> updateGroceryForUserWithId(@PathVariable String id, @RequestBody @Valid Grocery updated) {
         UserDto userDto = userService.updateGroceryForUserWithId(id, updated);
         return ResponseEntity.ok(userDto);
+    }
+
+    @PostMapping(path = "{tenantId}/recipe-with-cover-image",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public Boolean addRecipeWithImage(
+            @PathVariable String tenantId,
+            @Valid @RequestPart("recipe") RecipeDto recipeDto,
+            @RequestPart("image") MultipartFile image) {
+
+        // Save the image and get the URL
+        String imageUrl = FileStorageUtils.saveMultipartFileImage(image);
+
+        // Set the image URL in the recipe DTO
+        recipeDto.setImageUrl(imageUrl);
+
+
+        // Save the recipe with the image URL
+        RecipeDto recipe = recipeService.createOne(recipeDto);
+        // added to the users created recipe list
+        recipeService.addRecipeToUserRecipes(tenantId,recipe.getId());
+
+        return Boolean.TRUE;
     }
 
     @GetMapping("/{tenantId}/user-recipes")

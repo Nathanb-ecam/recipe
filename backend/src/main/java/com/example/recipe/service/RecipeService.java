@@ -126,7 +126,8 @@ public class RecipeService implements CrudService<RecipeDto> {
 
 
     public List<RecipeDto> getAllWithFilters(Optional<RelativePrice> relativePrice, Optional<FoodOrigin> foodOrigin, Optional<MealType> mealType, Optional<Integer> limit) {
-        List<Recipe> recipes = recipeRepository.findAll();  // Get all recipes from the database
+        // Get all recipes from the database
+        List<Recipe> recipes = recipeRepository.findAllByIsPublicTrue();
 
         // Filter by relativePrice if present
         if (relativePrice!= null && relativePrice.isPresent()) {

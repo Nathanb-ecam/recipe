@@ -104,27 +104,6 @@ public class RecipeController {
     }
 
 
-    @PostMapping(path = "/with-cover-image",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public Boolean addRecipeWithImage(
-            @Valid @RequestPart("recipe") RecipeDto recipeDto,
-            @RequestPart("image") MultipartFile image) {
-
-        // Save the image and get the URL
-        String imageUrl = FileStorageUtils.saveMultipartFileImage(image);
-
-        // Set the image URL in the recipe DTO
-        recipeDto.setImageUrl(imageUrl);
-
-
-        // Save the recipe with the image URL
-        RecipeDto recipe = recipeService.createOne(recipeDto);
-        // added to the users created recipe list
-        recipeService.addRecipeToUserRecipes(recipe.getTenantId(),recipe.getId());
-
-        return Boolean.TRUE;
-    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRecipe(@PathVariable String id) {
