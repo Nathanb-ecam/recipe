@@ -20,7 +20,7 @@ export default function ProfileScreen() {
   const { user } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState<RecipeDto | null>(null);
-
+  
   useEffect(() => {
     loadUserRecipes();
   }, []);
@@ -74,7 +74,7 @@ export default function ProfileScreen() {
     if (!recipeToDelete) return;
     
     try {
-      await api.deleteRecipe(recipeToDelete.id);
+      await api.deleteRecipeCreatedByUser(recipeToDelete.id);
       setRecipes(recipes.filter(r => r.id !== recipeToDelete.id));
       setShowDeleteModal(false);
       setRecipeToDelete(null);
@@ -84,13 +84,24 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleUnsaveRecipe = async (recipeId: string) => {    
+    if(recipeId.length <= 1) return;
+    try {
+      await api.removeRecipeIdFromSaved(recipeId);
+      setSavedRecipes(savedRecipes.filter(r => r.id !== recipeId));
+    } catch (error) {
+      console.error('Error unsaving recipe:', error);
+      alert('Failed to unsave recipe');
+    }
+  }
+
   const renderRecipeItem = ({ item }: { item: RecipeDto }) => (
     <TouchableOpacity
       style={styles.recipeSquare}
       onPress={() => router.push(`/recipe/${item.id}`)}
     >
       {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={styles.recipeImage} />
+        <Image source={{ uri: item.imageUrl }} style={styles.recipeImage}/>
       ) : (
         <View style={styles.recipePlaceholder} />
       )}
@@ -99,7 +110,7 @@ export default function ProfileScreen() {
       </Text>
       {activeTab === 'recipes' && (
         <TouchableOpacity
-          style={styles.deleteButton}
+          style={styles.topRightCardAbsButton}
           onPress={() => {
             setRecipeToDelete(item);
             setShowDeleteModal(true);
@@ -110,7 +121,7 @@ export default function ProfileScreen() {
       )}
       {activeTab === 'saved' && (
         <TouchableOpacity
-          style={styles.heartButton}
+          style={styles.topRightCardAbsButton}
           onPress={() => handleUnsaveRecipe(item.id)}
         >
           <FontAwesome name="heart" size={16} color="#FF3B30" />
@@ -362,7 +373,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
   },
-  heartButton: {
+  topRightCardAbsButton: {
     position: 'absolute',
     top: 8,
     right: 8,
@@ -381,14 +392,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  deleteButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#E5E5EA',
-    padding: 4,
-    borderRadius: 4,
-  },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -416,16 +420,23 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   cancelButton: {
-    padding: 12,
     marginRight: 8,
+    
   },
   cancelButtonText: {
     color: '#666',
     fontSize: 16,
+    padding: 4,
+    paddingInline: 8,
+  },  
+  deleteButton: {              
+    borderRadius: 4,    
   },
   deleteButtonText: {
-    color: '#fff',
+    color: '#666',
+    padding: 4,
+    paddingInline: 8,
+    backgroundColor: '#E5E5EA',
     fontSize: 16,
-    fontWeight: '600',
   },
 }); 

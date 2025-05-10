@@ -91,6 +91,40 @@ export const recipeApi = {
     }
   },
 
+  addRecipeIdToUserRecipes: async (recipe: RecipeDto): Promise<RecipeDto> => {
+    try {
+      const response = await fetch(`${API_URL}/users/${await getTenantId()}/user-recipes?recipeId=${recipe.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${await getAccessToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(recipe),
+      });
+      if (!response.ok) throw new Error('Failed to add recipeId to user recipes');
+      return await response.json();
+    } catch (error) {
+      console.error('Error adding recipeId to user recipes:', error);
+      throw error;
+    }
+  },
+
+  deleteRecipeCreatedByUser: async (recipeId: string): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/users/${await getTenantId()}/user-recipes?recipeId=${recipeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${await getAccessToken()}`,  
+        },
+      });
+      if (!response.ok) throw new Error('Failed to delete recipe');
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+      throw error;
+    }
+  },
+
+
   getSavedRecipes: async (): Promise<RecipeDto[]> => {
     try {
       const response = await fetch(`${API_URL}/users/${await getTenantId()}/saved-recipes`, {
@@ -106,6 +140,52 @@ export const recipeApi = {
     }
   },
 
+  addRecipeIdToSavedRecipes: async (recipeId: string): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/users/${await getTenantId()}/saved-recipes?recipeId=${recipeId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${await getAccessToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(recipeId),
+      });
+      if (!response.ok) throw new Error('Failed to add recipeId to saved recipes');
+    } catch (error) {
+      console.error('Error adding recipeId to saved recipes:', error);
+      throw error;
+    }
+  },
+
+  removeRecipeIdFromSaved: async (recipeId: string): Promise<void> => {
+    try {
+      const response = await fetch(`${API_URL}/users/${await getTenantId()}/saved-recipes?recipeId=${recipeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${await getAccessToken()}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to unsave recipe');
+    } catch (error) {
+      console.error('Error unsaving recipe:', error);
+      throw error;
+    }
+  },
+
+  isRecipeIdSaved: async (recipeId: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_URL}/users/${await getTenantId()}/is-saved-recipe?recipeId=${recipeId}`, {
+        headers: {
+          'Authorization': `Bearer ${await getAccessToken()}`,
+        },
+      }); 
+      if (!response.ok) throw new Error('Failed to check if recipeId is saved');
+      return await response.json();
+    } catch (error) {
+      console.error('Error checking if recipeId is saved:', error);
+      throw error;
+    }
+  },
 
   // Get recipes filtered by various criteria
   getFilteredRecipes: async (filters: {

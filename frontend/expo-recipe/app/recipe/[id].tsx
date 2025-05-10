@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { recipeApi } from '../../services/recipeApi';
 import { RecipeDto } from '../../types/recipe';
+import { FontAwesome } from '@expo/vector-icons';
+import { api } from '@/services/api';
 
 export default function RecipeScreen() {
   const { id } = useLocalSearchParams();
   const [recipe, setRecipe] = useState<RecipeDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     loadRecipe();
+    checkIfSaved(id as string);
   }, [id]);
 
   const loadRecipe = async () => {
@@ -25,6 +29,31 @@ export default function RecipeScreen() {
       setLoading(false);
     }
   };
+
+  const checkIfSaved = async (recipeId: string) => {
+    if(recipeId.length <= 1) return;
+    const isSaved = await api.isRecipeIdSaved(recipeId);
+    setIsSaved(isSaved);
+  }
+  
+  const handleToggleSaveRecipe = async (recipeId: string) => {
+    if(recipeId.length <= 1) return;
+    if(!isSaved) {    
+        try {
+          await api.addRecipeIdToSavedRecipes(recipeId);
+          setIsSaved(true);
+        } catch (error) {
+          console.error('Error adding recipeId to saved recipes:', error);
+        }
+    }else{
+      try {
+        await api.removeRecipeIdFromSaved(recipeId);
+        setIsSaved(false);
+      } catch (error) {
+        console.error('Error removing recipeId from saved recipes:', error);
+      }
+    }
+  }
 
   if (loading) {
     return (
@@ -49,10 +78,20 @@ export default function RecipeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container}>
-        <Image
-          source={{ uri: recipe.imageUrl || 'https://via.placeholder.com/300' }}
-          style={styles.image}
-        />
+        
+        <View style={styles.topImageContainer}>
+          <Image
+            source={{ uri: recipe.imageUrl || 'https://via.placeholder.com/300' }}
+            style={styles.image}
+          />
+          <TouchableOpacity
+            style={styles.topRightCardAbsButton}
+            onPress={() => handleToggleSaveRecipe(recipe.id)}
+          >
+              <FontAwesome name={isSaved ? 'heart' : 'heart-o'} size={16} color={isSaved ? '#FF3B30' : '#666'} />
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.content}>
           <Text style={styles.title}>{recipe.name}</Text>
           
@@ -121,9 +160,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  topImageContainer: {
+    position: 'relative',
+  },
   image: {
     width: '100%',
     height: 300,
+  },
+  topRightCardAbsButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
   },
   content: {
     padding: 16,
