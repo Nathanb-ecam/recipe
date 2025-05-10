@@ -4,25 +4,11 @@ import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { recipeApi } from '../../services/recipeApi';
-import { RecipeDto } from '../../types/recipe';
+import { RecipeDto, RelativePrice } from '../../types/recipe';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
+import { MealType, FoodOrigin, MEAL_TYPES, FOOD_ORIGINS } from '../../types/constants';
 
-interface RecipeIngredient {
-  name: string;
-  quantity: {
-    value: number;
-    unit: 'g' | 'kg' | 'pc';
-  };
-}
-
-interface RecipeStep {
-  instruction: string;
-  duration: {
-    value: number;
-    unit: 'min' | 'h';
-  };
-}
 
 export default function NewRecipeScreen() {
   const [recipe, setRecipe] = useState<Partial<RecipeDto>>({
@@ -32,21 +18,22 @@ export default function NewRecipeScreen() {
     steps: [],
     mealTypes: [],
     foodOrigins: [],
-    relativePrice: 'MODERATE',
+    relativePrice: undefined,
+    cookTimeMin: '',
+    prepTimeMin: '',
   });
   const [image, setImage] = useState<string | null>(null);
+  const [imageName, setImageName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [currentIngredient, setCurrentIngredient] = useState('');
   const [currentStep, setCurrentStep] = useState('');
   const [currentQuantity, setCurrentQuantity] = useState('');
-  const [currentDuration, setCurrentDuration] = useState('');
   const [selectedUnit, setSelectedUnit] = useState<'g' | 'kg' | 'pc'>('g');
-  const [selectedTimeUnit, setSelectedTimeUnit] = useState<'min' | 'h'>('min');
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
@@ -54,6 +41,26 @@ export default function NewRecipeScreen() {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
+      setImageName(result.assets[0].fileName || 'image.jpg');
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Sorry, we need camera permissions to make this work!');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+      setImageName(result.assets[0].fileName || 'image.jpg');
     }
   };
 
@@ -65,7 +72,7 @@ export default function NewRecipeScreen() {
           ...recipe.ingredients || [],
           {
             name: currentIngredient,
-            quantity: {
+            amount: {
               value: parseFloat(currentQuantity),
               unit: selectedUnit
             }
@@ -78,23 +85,34 @@ export default function NewRecipeScreen() {
   };
 
   const handleAddStep = () => {
-    if (currentStep && currentDuration) {
+    if (currentStep) {
       setRecipe({
         ...recipe,
         steps: [
           ...recipe.steps || [],
-          {
-            instruction: currentStep,
-            duration: {
-              value: parseFloat(currentDuration),
-              unit: selectedTimeUnit
-            }
-          }
+          currentStep
         ]
       });
       setCurrentStep('');
-      setCurrentDuration('');
     }
+  };
+
+  const handleMealTypeToggle = (mealType: MealType) => {
+    setRecipe(prev => ({
+      ...prev,
+      mealTypes: prev.mealTypes?.includes(mealType)
+        ? prev.mealTypes.filter(type => type !== mealType)
+        : [...(prev.mealTypes || []), mealType]
+    }));
+  };
+
+  const handleFoodOriginToggle = (origin: FoodOrigin) => {
+    setRecipe(prev => ({
+      ...prev,
+      foodOrigins: prev.foodOrigins?.includes(origin)
+        ? prev.foodOrigins.filter(o => o !== origin)
+        : [...(prev.foodOrigins || []), origin]
+    }));
   };
 
   const handleCreateRecipe = async () => {
@@ -108,7 +126,7 @@ export default function NewRecipeScreen() {
       const formData = new FormData();
       
       // Add recipe data
-      formData.append('recipe', JSON.stringify({
+      const recipeData = {
         ...recipe,
         isPublic,
         ingredients: recipe?.ingredients?.map(ing => ({
@@ -118,25 +136,21 @@ export default function NewRecipeScreen() {
             unit: ing.amount.unit
           }
         })),
-        steps: recipe?.steps?.map(step => ({
-          instruction: step.instruction,
-          duration: {
-            value: step.duration.value,
-            unit: step.duration.unit
-          }
-        }))
-      }));
+        steps: recipe?.steps,
+        cookTimeMin: parseInt(recipe.cookTimeMin || '0'),
+        prepTimeMin: parseInt(recipe.prepTimeMin || '0')
+      };
+
+      formData.append(
+        'recipe',
+        new Blob([JSON.stringify(recipeData)], { type: 'application/json' })
+      );
 
       // Add image
-      const imageUri = image;
-      const imageName = imageUri.split('/').pop();
-      const imageType = 'image/jpeg';
-      
-      formData.append('image', {
-        uri: imageUri,
-        name: imageName,
-        type: imageType,
-      } as any);
+      const imageUri = image;            
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      formData.append('image', blob, imageName || 'image.jpg');
 
       await recipeApi.createRecipeWithImage(formData);
       router.back();
@@ -151,12 +165,8 @@ export default function NewRecipeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <FontAwesome name="arrow-left" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.title}>New Recipe</Text>
-          <View style={{ width: 24 }} />
+        <View style={styles.header}>          
+          <Text style={styles.title}>Create your own Recipe</Text>          
         </View>
 
         <View style={styles.form}>
@@ -179,6 +189,74 @@ export default function NewRecipeScreen() {
               placeholder="Enter recipe description"
               multiline
             />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Preparation Time (minutes) *</Text>
+            <TextInput
+              style={styles.input}
+              value={recipe.prepTimeMin}
+              onChangeText={(text) => setRecipe({ ...recipe, prepTimeMin: text })}
+              placeholder="Enter preparation time in minutes"
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Cooking Time (minutes) *</Text>
+            <TextInput
+              style={styles.input}
+              value={recipe.cookTimeMin}
+              onChangeText={(text) => setRecipe({ ...recipe, cookTimeMin: text })}
+              placeholder="Enter cooking time in minutes"
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Meal Types *</Text>
+            <View style={styles.tagsContainer}>
+              {MEAL_TYPES.map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.tag,
+                    recipe.mealTypes?.includes(type) && styles.tagSelected
+                  ]}
+                  onPress={() => handleMealTypeToggle(type)}
+                >
+                  <Text style={[
+                    styles.tagText,
+                    recipe.mealTypes?.includes(type) && styles.tagTextSelected
+                  ]}>
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Cuisine type</Text>
+            <View style={styles.tagsContainer}>
+              {FOOD_ORIGINS.map((origin) => (
+                <TouchableOpacity
+                  key={origin}
+                  style={[
+                    styles.tag,
+                    recipe.foodOrigins?.includes(origin) && styles.tagSelected
+                  ]}
+                  onPress={() => handleFoodOriginToggle(origin)}
+                >
+                  <Text style={[
+                    styles.tagText,
+                    recipe.foodOrigins?.includes(origin) && styles.tagTextSelected
+                  ]}>
+                    {origin}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           <View style={styles.field}>
@@ -239,32 +317,18 @@ export default function NewRecipeScreen() {
               {recipe.steps?.map((step, index) => (
                 <View key={index} style={styles.listItem}>
                   <Text style={styles.listItemText}>
-                    {step.instruction} ({step.duration.value} {step.duration.unit})
+                    {index + 1}. {step}
                   </Text>
                 </View>
               ))}
               <View style={styles.addItemContainer}>
                 <TextInput
-                  style={[styles.input, styles.smallInput]}
+                  style={[styles.input, styles.stepInput]}
                   value={currentStep}
                   onChangeText={setCurrentStep}
-                  placeholder="Step instruction"
+                  placeholder="Enter step instruction"
+                  multiline
                 />
-                <TextInput
-                  style={[styles.input, styles.smallInput]}
-                  value={currentDuration}
-                  onChangeText={setCurrentDuration}
-                  placeholder="Duration"
-                  keyboardType="numeric"
-                />
-                <Picker
-                  selectedValue={selectedTimeUnit}
-                  style={styles.unitPicker}
-                  onValueChange={(value) => setSelectedTimeUnit(value)}
-                >
-                  <Picker.Item label="min" value="min" />
-                  <Picker.Item label="h" value="h" />
-                </Picker>
                 <TouchableOpacity style={styles.addButton} onPress={handleAddStep}>
                   <FontAwesome name="plus" size={16} color="#fff" />
                 </TouchableOpacity>
@@ -273,16 +337,24 @@ export default function NewRecipeScreen() {
           </View>
 
           <Text style={styles.label}>Cover Image *</Text>
-          <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-            {image ? (
-              <Image source={{ uri: image }} style={styles.image} />
-            ) : (
+          <View style={styles.imagePickerContainer}>
+            <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+              {image ? (
+                <Image source={{ uri: image }} style={styles.image} />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <FontAwesome name="image" size={24} color="#666" />
+                  <Text style={styles.imagePlaceholderText}>Select from Gallery</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.imagePicker} onPress={takePhoto}>
               <View style={styles.imagePlaceholder}>
                 <FontAwesome name="camera" size={24} color="#666" />
-                <Text style={styles.imagePlaceholderText}>Select Image</Text>
+                <Text style={styles.imagePlaceholderText}>Open camera</Text>
               </View>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity
@@ -392,12 +464,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  imagePickerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   imagePicker: {
+    width: '48%',
     height: 200,
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
-    marginBottom: 16,
     overflow: 'hidden',
   },
   image: {
@@ -440,5 +517,37 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: '600',    
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  tag: {
+    backgroundColor: '#f8f8f8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  tagSelected: {
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
+  },
+  tagText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  tagTextSelected: {
+    color: '#ffff',
+    fontWeight: '600',
+  },
+  stepInput: {
+    flex: 1,
+    marginRight: 8,
+    minHeight: 40,
   },
 }); 

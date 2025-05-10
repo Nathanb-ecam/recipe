@@ -5,6 +5,7 @@ import { recipeApi } from '../../services/recipeApi';
 import { RecipeDto } from '../../types/recipe';
 import { FontAwesome } from '@expo/vector-icons';
 import { api } from '@/services/api';
+import { API_ASSET_URL } from '@/services/config';
 
 export default function RecipeScreen() {
   const { id } = useLocalSearchParams();
@@ -75,13 +76,15 @@ export default function RecipeScreen() {
     );
   }
 
+  // console.log(recipe);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container}>
         
         <View style={styles.topImageContainer}>
           <Image
-            source={{ uri: recipe.imageUrl || 'https://via.placeholder.com/300' }}
+            source={{ uri: API_ASSET_URL + recipe.imageUrl || 'https://via.placeholder.com/300' }}
             style={styles.image}
           />
           <TouchableOpacity
@@ -93,21 +96,28 @@ export default function RecipeScreen() {
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.title}>{recipe.name}</Text>
-          
-          {recipe.description && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Description</Text>
-              <Text style={styles.description}>{recipe.description}</Text>
+                      
+            <View style={styles.header}>
+                <Text style={styles.title}>{recipe.name}</Text>
+                <View style={styles.headerRightSection}>
+                  <Text>{recipe.relativePrice}</Text>
+                  <Text style={styles.duration}>{recipe.cookTimeMin}min</Text>
+                  <Text style={styles.duration}>{recipe.prepTimeMin}min</Text>
+                </View>
             </View>
+                      
+    
+          {recipe.description && (
+            <Text style={styles.description}>{recipe.description}</Text>
           )}
+  
 
           {recipe.ingredients && recipe.ingredients.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Ingredients</Text>
               {recipe.ingredients.map((ingredient, index) => (
                 <Text key={index} style={styles.ingredient}>
-                  • {ingredient.name} ({ingredient.amount.value} {ingredient.amount.unit})
+                  • {ingredient.name} ({ingredient?.amount?.value} {ingredient?.amount?.unit})
                 </Text>
               ))}
             </View>
@@ -119,26 +129,30 @@ export default function RecipeScreen() {
               {recipe.steps.map((step, index) => (
                 <View key={index} style={styles.step}>
                   <Text style={styles.stepNumber}>{index + 1}.</Text>
-                  <Text style={styles.stepText}>{step.instruction}</Text>
+                  <Text style={styles.stepText}>{step}</Text>
                 </View>
               ))}
             </View>
           )}
 
-          {recipe.duration && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Duration</Text>
-              <Text style={styles.duration}>
-                {recipe.duration.value} {recipe.duration.unit}
-              </Text>
-            </View>
-          )}
 
           {recipe.mealTypes && recipe.mealTypes.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Meal Types</Text>
+              <Text style={styles.sectionTitle}>Repas</Text>
               <View style={styles.mealTypes}>
                 {recipe.mealTypes.map((type, index) => (
+                  <Text key={index} style={styles.mealType}>
+                    {type}
+                  </Text>
+                ))}
+              </View>
+            </View>
+          )}
+          {recipe.foodOrigins && recipe.foodOrigins.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Types de cuisine</Text>
+              <View style={styles.foodOrigins}>
+                {recipe.foodOrigins.map((type, index) => (
                   <Text key={index} style={styles.mealType}>
                     {type}
                   </Text>
@@ -171,6 +185,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 16,
     right: 16,
+    width:  34,
+    height: 34,
+    borderRadius: 12,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   content: {
     padding: 16,
@@ -178,11 +207,23 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 4,
   },
   section: {
     marginBottom: 24,
   },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerRightSection: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -192,6 +233,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#333',
+    marginBottom: 16,
   },
   ingredient: {
     fontSize: 16,
@@ -215,8 +257,13 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   duration: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: 12,
+    fontWeight: '400',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#f8f8f8',
+    color: '#666',
   },
   mealTypes: {
     flexDirection: 'row',
@@ -231,5 +278,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 14,
     color: '#666',
+  },
+
+  foodOrigins: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
 }); 

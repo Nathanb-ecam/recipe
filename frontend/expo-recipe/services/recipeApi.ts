@@ -59,7 +59,7 @@ export const recipeApi = {
   // Get recipes by their IDs
   getRecipesFromIds: async (recipesIds: string[]): Promise<RecipeDto[]> => {
     try {
-      const response = await fetch(`${API_URL}/recipes/compact-batch`, {
+      const response = await fetch(`${API_URL}/recipes/batch`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${await getAccessToken()}`,
@@ -217,10 +217,16 @@ export const recipeApi = {
   // Create a new recipe with an image
   createRecipeWithImage: async (formData: FormData): Promise<RecipeDto> => {
     try {
-      const response = await fetch(`${API_URL}/recipes/with-cover-image`, {
+      console.log('Creating recipe with image');
+      for (const pair of formData.entries()) {
+        console.log(`${pair[0]}:`, pair[1]);
+      }
+      console.log('access token', await getAccessToken());       
+      
+      const response = await fetch(`${API_URL}/users/${await getTenantId()}/recipe-with-cover-image`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${await getAccessToken()}`,
+          'Authorization': `Bearer ${await getAccessToken()}`
         },
         body: formData,
       });

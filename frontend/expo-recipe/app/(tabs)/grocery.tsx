@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E5EA',
   },
   title: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: 'bold',
   },
   list: {

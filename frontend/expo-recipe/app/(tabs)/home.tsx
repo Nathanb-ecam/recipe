@@ -8,6 +8,7 @@ import { recipeApi } from '../../services/recipeApi';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { API_ASSET_URL, API_URL } from '@/services/config';
 
 export default function HomeScreen() {
   const [upcomingMeals, setUpcomingMeals] = useState<any[]>([]);
@@ -98,7 +99,8 @@ export default function HomeScreen() {
       onPress={() => handleRecipePress(item)}
     >
       <Image
-        source={{ uri: item.imageUrl || 'https://via.placeholder.com/150' }}
+        source={{ uri: API_ASSET_URL + item.imageUrl || 'https://via.placeholder.com/150' }}
+        onError={() => {}}
         style={styles.recipeImage}
       />
       <Text style={styles.recipeCardName}>{item.name}</Text>
@@ -123,7 +125,7 @@ export default function HomeScreen() {
               onPress={() => router.push('/recipe/new?source=image')}
             >
               <FontAwesome name="camera" size={18} color="#000" />
-              <Text style={styles.createRecipeText}>Create from image</Text>
+              <Text style={styles.createRecipeText}>Scan image</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.createRecipeButton}
@@ -154,9 +156,10 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Upcoming Meals</Text>
-          <View style={styles.daysContainer}>
+        {upcomingMeals.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Upcoming Meals</Text>
+            <View style={styles.daysContainer}>
             {upcomingMeals.map((day, index) => (
               <View key={index} style={styles.dayColumn}>
                 <Text style={styles.dayTitle}>
@@ -174,8 +177,9 @@ export default function HomeScreen() {
                 </View>
               </View>
             ))}
+            </View>
           </View>
-        </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Popular Recipes</Text>

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, FlatList, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, FlatList, ScrollView, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
-import { RecipeDto } from '../../types/recipe';
+import { RecipeDto, FoodOrigin } from '../../types/recipe';
 import { FontAwesome } from '@expo/vector-icons';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { router } from 'expo-router';
+import { API_ASSET_URL } from '@/services/config';
+import { FOOD_ORIGINS } from '../../types/constants';
 
 type TabType = 'recipes' | 'saved' | 'shared';
 
@@ -20,6 +22,8 @@ export default function ProfileScreen() {
   const { user } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState<RecipeDto | null>(null);
+  const [selectedOrigins, setSelectedOrigins] = useState<FoodOrigin[]>([]);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   
   useEffect(() => {
     loadUserRecipes();
@@ -95,13 +99,32 @@ export default function ProfileScreen() {
     }
   }
 
+  const handleFilterSelect = (origin: FoodOrigin) => {
+    setSelectedOrigins(prev => 
+      prev.includes(origin) 
+        ? prev.filter(o => o !== origin)
+        : [...prev, origin]
+    );
+  };
+
+  const filteredRecipes = recipes.filter(recipe => 
+    selectedOrigins.length === 0 || 
+    recipe.foodOrigins?.some(origin => selectedOrigins.includes(origin))
+  );
+
+  const filteredSavedRecipes = savedRecipes.filter(recipe => 
+    selectedOrigins.length === 0 || 
+    recipe.foodOrigins?.some(origin => selectedOrigins.includes(origin))
+  );
+
   const renderRecipeItem = ({ item }: { item: RecipeDto }) => (
     <TouchableOpacity
+      key={item.id}
       style={styles.recipeSquare}
       onPress={() => router.push(`/recipe/${item.id}`)}
     >
       {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={styles.recipeImage}/>
+        <Image source={{ uri: API_ASSET_URL + item.imageUrl }} style={styles.recipeImage}/>
       ) : (
         <View style={styles.recipePlaceholder} />
       )}
@@ -139,7 +162,7 @@ export default function ProfileScreen() {
       case 'recipes':
         return (
           <FlatList
-            data={recipes}
+            data={filteredRecipes}
             renderItem={renderRecipeItem}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.recipeList}
@@ -148,7 +171,7 @@ export default function ProfileScreen() {
       case 'saved':
         return (
           <FlatList
-            data={savedRecipes}
+            data={filteredSavedRecipes}
             renderItem={renderRecipeItem}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.recipeList}
@@ -165,6 +188,45 @@ export default function ProfileScreen() {
         );
     }
   };
+
+  const renderFilterModal = () => (
+    <Modal
+      visible={showFilterModal}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowFilterModal(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Filter by Cuisine</Text>
+            <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+              <FontAwesome name="times" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.filterOptions}>
+            {FOOD_ORIGINS.map((origin) => (
+              <TouchableOpacity
+                key={origin}
+                style={[
+                  styles.filterOption,
+                  selectedOrigins.includes(origin) && styles.filterOptionSelected
+                ]}
+                onPress={() => handleFilterSelect(origin)}
+              >
+                <Text style={[
+                  styles.filterOptionText,
+                  selectedOrigins.includes(origin) && styles.filterOptionTextSelected
+                ]}>
+                  {origin}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   if (loading) {
     return (
@@ -197,20 +259,45 @@ export default function ProfileScreen() {
             style={[styles.tab, activeTab === 'recipes' && styles.activeTab]}
             onPress={() => handleTabChange('recipes')}
           >
-            <FontAwesome name="book" size={24} color={activeTab === 'recipes' ? '#FFD700' : '#666'} />
+            <FontAwesome name="book" size={18} color={activeTab === 'recipes' ? '#FFD700' : '#666'} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'saved' && styles.activeTab]}
             onPress={() => handleTabChange('saved')}
           >
-            <FontAwesome name="heart" size={24} color={activeTab === 'saved' ? '#FFD700' : '#666'} />
+            <FontAwesome name="heart" size={18} color={activeTab === 'saved' ? '#FFD700' : '#666'} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'shared' && styles.activeTab]}
             onPress={() => handleTabChange('shared')}
           >
-            <FontAwesome name="share" size={24} color={activeTab === 'shared' ? '#FFD700' : '#666'} />
+            <FontAwesome name="share" size={18} color={activeTab === 'shared' ? '#FFD700' : '#666'} />
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setShowFilterModal(true)}
+          >
+            <FontAwesome name="filter" size={20} color="#666" />
+            <Text style={styles.filterButtonText}>Filter</Text>
+          </TouchableOpacity>
+          {selectedOrigins.length > 0 && (
+            <View style={styles.selectedFilters}>
+              {selectedOrigins.map((origin) => (
+                <View key={origin} style={styles.filterTag}>
+                  <Text style={styles.filterTagText}>{origin}</Text>
+                  <TouchableOpacity
+                    onPress={() => handleFilterSelect(origin)}
+                    style={styles.filterTagRemove}
+                  >
+                    <FontAwesome name="times" size={12} color="#666" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         <View style={styles.content}>
@@ -218,8 +305,8 @@ export default function ProfileScreen() {
             <LoadingSpinner />
           ) : (
             <View style={styles.recipeGrid}>
-              {activeTab === 'recipes' && recipes.map((recipe) => renderRecipeItem({ item: recipe }))}
-              {activeTab === 'saved' && savedRecipes.map((recipe) => renderRecipeItem({ item: recipe }))}
+              {activeTab === 'recipes' && filteredRecipes.map((recipe) => renderRecipeItem({ item: recipe }))}
+              {activeTab === 'saved' && filteredSavedRecipes.map((recipe) => renderRecipeItem({ item: recipe }))}
               {activeTab === 'shared' && sharedRecipes.map((recipe) => renderRecipeItem({ item: recipe }))}
             </View>
           )}
@@ -254,6 +341,8 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Modal>
+
+        {renderFilterModal()}
       </View>
     </SafeAreaView>
   );
@@ -286,21 +375,21 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   username: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
   },
   bio: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#666',
-    textAlign: 'center',
+    textAlign: 'center',    
   },
-  tabNavigation: {
+  tabNavigation: {    
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
   },
-  tab: {
+  tab: {    
     flex: 1,
     paddingVertical: 12,
     alignItems: 'center',
@@ -377,12 +466,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: 'white',
     width: 24,
     height: 24,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'white',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -438,5 +527,96 @@ const styles = StyleSheet.create({
     paddingInline: 8,
     backgroundColor: '#E5E5EA',
     fontSize: 16,
+  },
+  filterContainer: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    padding: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  filterButtonText: {
+    marginLeft: 8,
+    color: '#666',
+  },
+  selectedFilters: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  filterTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  filterTagText: {
+    fontSize: 14,
+    color: '#666',
+    marginRight: 4,
+  },
+  filterTagRemove: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  filterOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  filterOption: {
+    backgroundColor: '#f8f8f8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  filterOptionSelected: {
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
+  },
+  filterOptionText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  filterOptionTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
   },
 }); 

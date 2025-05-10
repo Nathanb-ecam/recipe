@@ -7,6 +7,7 @@ import { RecipeDto, MealType, FoodOrigin, RelativePrice } from '../../types/reci
 import { FontAwesome } from '@expo/vector-icons';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { router } from 'expo-router';
+import { API_ASSET_URL } from '@/services/config';
 
 const FOOD_ORIGINS: FoodOrigin[] = ['THAI', 'CHINESE', 'FRENCH', 'ITALIAN', 'USA', 'SPANISH'];
 const MEAL_TYPES: MealType[] = ['BREAKFAST', 'LUNCH', 'DINNER'];
@@ -92,6 +93,38 @@ export default function RecipesScreen() {
     }));
   };
 
+  const handleRemoveFilter = (type: 'origins' | 'mealTypes' | 'prices', value: string) => {
+    setSelectedOrigins(prev => type === 'origins' ? prev.filter(v => v !== value) : prev);
+    setSelectedMealTypes(prev => type === 'mealTypes' ? prev.filter(v => v !== value) : prev);
+    setSelectedPrices(prev => type === 'prices' ? prev.filter(v => v !== value) : prev);
+  };
+
+  const renderFilterTags = () => {
+    const allFilters = [
+      ...selectedOrigins.map(origin => ({ type: 'origins' as const, value: origin })),
+      ...selectedMealTypes.map(type => ({ type: 'mealTypes' as const, value: type })),
+      ...selectedPrices.map(price => ({ type: 'prices' as const, value: price }))
+    ];
+
+    if (allFilters.length === 0) return null;
+
+    return (
+      <View style={styles.filterTagsContainer}>
+        {allFilters.map((filter, index) => (
+          <View key={index} style={styles.filterTag}>
+            <Text style={styles.filterTagText}>{filter.value}</Text>
+            <TouchableOpacity
+              onPress={() => handleRemoveFilter(filter.type, filter.value)}
+              style={styles.filterTagRemove}
+            >
+              <FontAwesome name="times" size={12} color="#666" />
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   const filteredRecipes = useMemo(() => {
     return recipes.filter(recipe => {
       const matchesSearch = recipe.name.toLowerCase().includes(searchText.toLowerCase());
@@ -112,7 +145,8 @@ export default function RecipesScreen() {
       onPress={() => router.push(`/recipe/${item.id}`)}
     >
       <Image
-        source={{ uri: item?.imageUrl || 'https://via.placeholder.com/150' }}
+        source={{ uri: API_ASSET_URL + item?.imageUrl || 'https://via.placeholder.com/150' }}
+        onError={() => {}}
         style={styles.recipeImage}
       />
       <View style={styles.recipeInfo}>
@@ -171,25 +205,7 @@ export default function RecipesScreen() {
           />
         </View>
 
-        {(selectedOrigins.length > 0 || selectedMealTypes.length > 0 || selectedPrices.length > 0) && (
-          <View style={styles.selectedFiltersContainer}>
-            {selectedOrigins.map((origin) => (
-              <View key={origin} style={styles.selectedFilterChip}>
-                <Text style={styles.selectedFilterChipText}>{origin}</Text>
-              </View>
-            ))}
-            {selectedMealTypes.map((type) => (
-              <View key={type} style={styles.selectedFilterChip}>
-                <Text style={styles.selectedFilterChipText}>{type}</Text>
-              </View>
-            ))}
-            {selectedPrices.map((price) => (
-              <View key={price} style={styles.selectedFilterChip}>
-                <Text style={styles.selectedFilterChipText}>{price}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        {renderFilterTags()}
 
         <FlatList
           data={filteredRecipes}
@@ -507,5 +523,36 @@ const styles = StyleSheet.create({
   applyButtonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  filterTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 8,
+    backgroundColor: '#f8f8f8',
+  },
+  filterTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  filterTagText: {
+    fontSize: 14,
+    color: '#666',
+    marginRight: 4,
+  },
+  filterTagRemove: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 

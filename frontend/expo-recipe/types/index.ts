@@ -19,14 +19,17 @@ export interface RecipeStep {
 export interface RecipeDto {
   id: string;
   name: string;
-  duration: Amount;
+  // duration: Amount;
+  cookTimeMin: string;
+  prepTimeMin: string;
   description: string;
   isPublic: boolean;
   mealTypes: MealType[];
   imageUrl: string;
   categoryIds: string[];
-  ingredients: RecipeIngredient[];
-  steps: RecipeStep[];
+  // ingredients: RecipeIngredient[];  
+  // steps: RecipeStep[];
+  steps: string[];
   averagePrice: Amount;
 }
 
