@@ -84,13 +84,14 @@ public class RecipeService implements CrudService<RecipeDto> {
     }
 
 
-    public UserDto popLastUserRecipe(String userId) {
+    public UserDto removeRecipeOfUserRecipes(String userId, String recipeId) {
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoContentException("User not found"));
 
         List<String> recipes = user.getRecipesIds();
-        if (!recipes.isEmpty()) {
-            recipes.removeLast();
+        if (recipes.contains(recipeId)) {
+            recipes.remove(recipeId); // Remove by value, not index
             userRepository.save(user);
         }
 

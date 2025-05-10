@@ -41,22 +41,36 @@ public class UserController {
         return ResponseEntity.ok(recipes);
     }
 
-    @PostMapping("/{tenantId}/user-recipes/add")
+    @PostMapping("/{tenantId}/user-recipes")
     public ResponseEntity<UserDto> addRecipeToUserRecipes(
             @PathVariable String tenantId,
-            @RequestParam String recipeId) {
+            @RequestParam String recipeId
+    ) {
 
         UserDto updatedUser = recipeService.addRecipeToUserRecipes(tenantId, recipeId);
         return ResponseEntity.ok(updatedUser);
     }
 
 
-    @DeleteMapping("/{tenantId}/user-recipes/pop")
-    public ResponseEntity<UserDto> popLastRecipeFromUser(@PathVariable String tenantId) {
-        UserDto updatedUser = recipeService.popLastUserRecipe(tenantId);
+    @DeleteMapping("/{tenantId}/user-recipes")
+    public ResponseEntity<UserDto> deleteRecipeOfUserRecipes(
+            @PathVariable String tenantId,
+            @RequestParam String recipeId
+    ) {
+        UserDto updatedUser = recipeService.removeRecipeOfUserRecipes(tenantId, recipeId);
+        recipeService.deleteOneById(recipeId);
         return ResponseEntity.ok(updatedUser);
     }
 
+
+    @GetMapping("/{tenantId}/is-saved-recipe")
+    public ResponseEntity<Boolean> checkIfUserAlreadySavedRecipe(
+            @PathVariable String tenantId,
+            @RequestParam String recipeId
+    ) {
+        Boolean alreadySaved = userService.checkIfUserAlreadySavedRecipe(tenantId, recipeId);
+        return ResponseEntity.ok(alreadySaved);
+    }
 
     @GetMapping("/{tenantId}/saved-recipes")
     public ResponseEntity<List<RecipeDto>> fetchUserSavedRecipes(@PathVariable String tenantId) {
@@ -64,26 +78,26 @@ public class UserController {
         return ResponseEntity.ok(recipes);
     }
 
-    @PatchMapping("/{id}/saved-recipes/add")
+    @PostMapping("/{id}/saved-recipes")
     public ResponseEntity<UserDto> addRecipeIdToUser(
             @PathVariable String id,
             @RequestParam String recipeId
     ) {
-        UserDto updatedUser = userService.addRecipeIdToUser(id, recipeId);
+        UserDto updatedUser = userService.addRecipeIdToUserSaved(id, recipeId);
         return ResponseEntity.ok(updatedUser);
     }
 
-    @PatchMapping("/{id}/saved-recipes/remove")
+    @DeleteMapping("/{id}/saved-recipes")
     public ResponseEntity<UserDto> removeRecipeIdFromUser(
             @PathVariable String id,
             @RequestParam String recipeId
     ) {
-        UserDto updatedUser = userService.removeRecipeIdFromUser(id, recipeId);
+        UserDto updatedUser = userService.removeRecipeIdFromUserSaved(id, recipeId);
         return ResponseEntity.ok(updatedUser);
     }
 
 
-    @PatchMapping("/{id}/saved-recipes/update")
+    @PatchMapping("/{id}/saved-recipes")
     public ResponseEntity<UserDto> updateRecipeIdsOfUser(@PathVariable String id, @RequestBody @Valid UserDto updated) {
         UserDto userDto = userService.updateRecipesIdsForUserWithId(id, updated);
         return ResponseEntity.ok(userDto);

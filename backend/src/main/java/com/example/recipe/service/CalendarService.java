@@ -30,7 +30,6 @@ public class CalendarService {
         if (calendarItems.isEmpty()) {
             // Optionally, throw an exception if no records found or return an empty list
             throw new NoContentException("Calendar item not found");
-
         }
 
         return calendarItems.get();

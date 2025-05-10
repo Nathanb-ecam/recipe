@@ -6,6 +6,7 @@ import com.example.recipe.model.FoodOrigin;
 import com.example.recipe.model.MealType;
 import com.example.recipe.model.RelativePrice;
 import com.example.recipe.service.RecipeService;
+import com.example.recipe.service.UserService;
 import com.example.recipe.utils.FileStorageUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import java.util.Optional;
 public class RecipeController {
 
     private final RecipeService recipeService;
+    private final UserService userService;
 
 
     @GetMapping("/filters")
@@ -105,7 +107,7 @@ public class RecipeController {
     @PostMapping(path = "/with-cover-image",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public RecipeDto addRecipeWithImage(
+    public Boolean addRecipeWithImage(
             @Valid @RequestPart("recipe") RecipeDto recipeDto,
             @RequestPart("image") MultipartFile image) {
 
@@ -115,8 +117,13 @@ public class RecipeController {
         // Set the image URL in the recipe DTO
         recipeDto.setImageUrl(imageUrl);
 
+
         // Save the recipe with the image URL
-        return recipeService.createOne(recipeDto);
+        RecipeDto recipe = recipeService.createOne(recipeDto);
+        // added to the users created recipe list
+        recipeService.addRecipeToUserRecipes(recipe.getTenantId(),recipe.getId());
+
+        return Boolean.TRUE;
     }
 
     @DeleteMapping("/{id}")

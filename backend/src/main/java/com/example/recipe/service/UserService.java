@@ -68,7 +68,6 @@ public class UserService implements CrudService<UserDto>{
         return userMapper.toDto(userRepository.save(user));
     }
 
-
     public UserDto removeRecipeIdFromUser(String userId, String recipeId) {
         CheckUserAllowedToAccessResource(userId);
 
@@ -85,6 +84,65 @@ public class UserService implements CrudService<UserDto>{
 
         return userMapper.toDto(userRepository.save(user));
     }
+
+
+    /* SAVED RECIPES */
+
+    public Boolean checkIfUserAlreadySavedRecipe(String userId, String recipeId) {
+        CheckUserAllowedToAccessResource(userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoContentException("User not found"));
+
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new NoContentException("Recipe not found"));
+
+        List<String> recipesIds = user.getSavedRecipesIds();
+
+        return recipesIds.contains(recipeId);
+    }
+
+    public UserDto addRecipeIdToUserSaved(String userId, String recipeId) {
+        CheckUserAllowedToAccessResource(userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoContentException("User not found"));
+
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new NoContentException("Recipe not found"));
+
+        List<String> recipesIds = user.getSavedRecipesIds();
+        if (recipesIds.contains(recipeId)) {
+            throw new GenericException("User already saved this recipe");
+        }
+
+        recipesIds.add(recipeId);
+        user.setSavedRecipesIds(recipesIds);
+
+        return userMapper.toDto(userRepository.save(user));
+    }
+
+
+
+
+
+    public UserDto removeRecipeIdFromUserSaved(String userId, String recipeId) {
+        CheckUserAllowedToAccessResource(userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoContentException("User not found"));
+
+        List<String> recipesIds = user.getSavedRecipesIds();
+        if (!recipesIds.contains(recipeId)) {
+            throw new NoContentException("Recipe not found in user saved list");
+        }
+
+        recipesIds.remove(recipeId);
+        user.setSavedRecipesIds(recipesIds);
+
+        return userMapper.toDto(userRepository.save(user));
+    }
+
 
 
     public UserDto updateRecipesIdsForUserWithId(String id, UserDto userDto) {
