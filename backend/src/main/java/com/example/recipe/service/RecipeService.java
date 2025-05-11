@@ -172,7 +172,7 @@ public class RecipeService implements CrudService<RecipeDto> {
                     .stream()
                     .map(recipeMapper::toDto)
                     .collect(Collectors.toList());
-            if (recipes.isEmpty()) throw new NoContentException("There are no recipes");
+            /*if (recipes.isEmpty()) throw new NoContentException("There are no recipes");*/
             return recipes;
         }catch(DataAccessException e){
             throw new DatabaseException("Error accessing the database");
@@ -287,7 +287,7 @@ public class RecipeService implements CrudService<RecipeDto> {
                     .stream()
                     .map(recipeMapper::toCompactDto)
                     .collect(Collectors.toList());
-            if (recipes.isEmpty()) throw new NoContentException("There are no recipes");
+            /*if (recipes.isEmpty()) throw new NoContentException("There are no recipes");*/
             return recipes;
         }catch(DataAccessException e){
             throw new DatabaseException("Error accessing the database");

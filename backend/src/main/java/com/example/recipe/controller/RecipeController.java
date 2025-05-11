@@ -27,6 +27,13 @@ public class RecipeController {
     private final RecipeService recipeService;
     private final UserService userService;
 
+    @PostMapping("/ideas")
+    public ResponseEntity<List<String>> getIdeas(@Valid @RequestBody List<String> ingredients) {
+        /* SHOULD EITHER RETURN A LIST OF RECIPE_IDS OR A LIST OF SUGGESTIONS (recipe names that are not in DB) */
+        /*List<String> ingredientsList = List.of("c6a0da55-276e-4b0e-9ed9-18a3009b6ce5");*/
+        List<String> ingredientsList = List.of("Tomates mozza","Caviar");
+        return ResponseEntity.ok(ingredientsList);
+    }
 
     @GetMapping("/filters")
     public ResponseEntity<List<RecipeDto>> getAllRecipesFiltered(

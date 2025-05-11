@@ -15,6 +15,7 @@ public class Ingredient {
     @Id
     private String id = UUID.randomUUID().toString();
     private String name;
+    private String imageUrl;
     private IngredientType type;
     //private List<String> categories;
     //private List<Price> prices;
