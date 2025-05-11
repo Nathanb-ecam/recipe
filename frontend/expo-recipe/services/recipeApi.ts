@@ -1,4 +1,4 @@
-import { RecipeDto } from '../types/recipe';
+import { RecipeDto, IngredientDto } from '../types/recipe';
 import { getAccessToken, getTenantId } from './authUtils';
 import { API_URL } from './config';
 import { MealType, FoodOrigin, RelativePrice } from '../types/constants';
@@ -234,6 +234,21 @@ export const recipeApi = {
       return await response.json();
     } catch (error) {
       console.error('Error creating recipe:', error);
+      throw error;
+    }
+  },
+
+  getIngredients: async (): Promise<IngredientDto[]> => {
+    try {
+      const response = await fetch(`${API_URL}/ingredients`, {
+        headers: {
+          'Authorization': `Bearer ${await getAccessToken()}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch ingredients');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching ingredients:', error);
       throw error;
     }
   },

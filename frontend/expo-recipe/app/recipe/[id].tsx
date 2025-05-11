@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, SafeAreaView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack, Tabs } from 'expo-router';
 import { recipeApi } from '../../services/recipeApi';
-import { RecipeDto } from '../../types/recipe';
+import { RecipeDto, IngredientDto } from '../../types/recipe';
 import { FontAwesome } from '@expo/vector-icons';
 import { api } from '@/services/api';
 import { API_ASSET_URL } from '@/services/config';
@@ -11,6 +11,7 @@ export default function RecipeScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [recipe, setRecipe] = useState<RecipeDto | null>(null);
+  const [ingredients, setIngredients] = useState<IngredientDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -24,6 +25,9 @@ export default function RecipeScreen() {
       const data = await recipeApi.getRecipesFromIds([id as string]);
       if (data.length > 0) {
         setRecipe(data[0]);
+        // Load ingredients data for the recipe
+        const ingredientsData = await recipeApi.getIngredients();
+        setIngredients(ingredientsData);
         router.setParams({ title: data[0].name });
       }
     } catch (error) {
@@ -111,18 +115,33 @@ export default function RecipeScreen() {
                         
       
             {recipe.description && (
-              <Text style={styles.dscription}>{recipe.description}</Text>
+              <Text style={styles.description}>{recipe.description}</Text>
             )}
     
 
             {recipe.ingredients && recipe.ingredients.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Ingredients</Text>
-                {recipe.ingredients.map(({name, amount}, index) => (
-                  <Text key={index} style={styles.ingredient}>
-                    • {name} {amount?.value} {amount?.unit}
-                  </Text>
-                ))}
+                <View style={styles.ingredientsGrid}>
+                  {recipe.ingredients.map((ingredient, index) => {
+                    const ingredientData = ingredients.find(i => i.id === ingredient.ingredientId);
+                    return (
+                      <View key={index} style={styles.ingredientCard}>
+                        <Image
+                          source={{ uri: API_ASSET_URL + ingredientData?.imageUrl || 'https://via.placeholder.com/100' }}
+                          style={styles.ingredientImage}
+                          resizeMode="cover"
+                        />
+                        <Text style={styles.ingredientName} numberOfLines={2}>
+                          {ingredientData?.name}
+                        </Text>
+                        <Text style={styles.ingredientAmount}>
+                          {ingredient?.amount?.value} {ingredient?.amount?.unit}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
             )}
 
@@ -302,5 +321,30 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 16,
     color: 'red',
+  },
+  ingredientsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -8,
+  },
+  ingredientCard: {
+    width: '33.33%',
+    padding: 8,
+    alignItems: 'center',
+  },
+  ingredientImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 8,
+  },
+  ingredientName: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  ingredientAmount: {
+    fontSize: 12,
+    color: '#666',
   },
 }); 

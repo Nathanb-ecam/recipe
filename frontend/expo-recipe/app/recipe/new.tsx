@@ -1,10 +1,10 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Platform, Switch } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Platform, Switch, Modal, FlatList } from 'react-native';
 import { router, Tabs } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { recipeApi } from '../../services/recipeApi';
-import { RecipeDto, RelativePrice } from '../../types/recipe';
+import { RecipeDto, RelativePrice, IngredientDto, RecipeIngredient, IngredientType, INGREDIENT_TYPES } from '../../types/recipe';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import { MealType, FoodOrigin, MEAL_TYPES, FOOD_ORIGINS } from '../../types/constants';
@@ -19,17 +19,89 @@ export default function NewRecipeScreen() {
     mealTypes: [],
     foodOrigins: [],
     relativePrice: undefined,
-    cookTimeMin: '',
-    prepTimeMin: '',
+    cookTimeMin: 0,
+    prepTimeMin: 0,
   });
   const [image, setImage] = useState<string | null>(null);
   const [imageName, setImageName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
-  const [currentIngredient, setCurrentIngredient] = useState('');
-  const [currentStep, setCurrentStep] = useState('');
+  const [ingredients, setIngredients] = useState<IngredientDto[]>([]);
+  const [selectedIngredient, setSelectedIngredient] = useState<IngredientDto | null>(null);
+  const [showIngredientModal, setShowIngredientModal] = useState(false);
   const [currentQuantity, setCurrentQuantity] = useState('');
   const [selectedUnit, setSelectedUnit] = useState<'g' | 'kg' | 'pc'>('g');
+  const [currentStep, setCurrentStep] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<IngredientType | 'ALL'>('ALL');
+
+  useEffect(() => {
+    loadIngredients();
+  }, []);
+
+  const loadIngredients = async () => {
+    try {
+      const data = await recipeApi.getIngredients();
+      setIngredients(data);
+    } catch (error) {
+      console.error('Error loading ingredients:', error);
+    }
+  };
+
+  const handleAddIngredient = () => {
+    if (!selectedIngredient || !currentQuantity) return;
+
+    const newIngredient: RecipeIngredient = {
+      ingredientId: selectedIngredient.id,
+      amount: {
+        value: parseFloat(currentQuantity),
+        unit: selectedUnit
+      }
+    };
+
+    setRecipe(prev => ({
+      ...prev,
+      ingredients: [...(prev.ingredients || []), newIngredient]
+    }));
+
+    setSelectedIngredient(null);
+    setCurrentQuantity('');
+    setShowIngredientModal(false);
+  };
+
+  const handleRemoveIngredient = (index: number) => {
+    setRecipe(prev => ({
+      ...prev,
+      ingredients: prev.ingredients?.filter((_, i) => i !== index)
+    }));
+  };
+
+  const filteredIngredients = ingredients.filter(ingredient => {
+    const matchesSearch = ingredient.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = selectedType === 'ALL' || ingredient.type === selectedType;
+    return matchesSearch && matchesType;
+  });
+
+  const renderIngredientItem = ({ item }: { item: IngredientDto }) => (
+    <TouchableOpacity
+      style={[
+        styles.ingredientItem,
+        selectedIngredient?.id === item.id && styles.selectedIngredientItem
+      ]}
+      onPress={() => setSelectedIngredient(item)}
+    >
+      {item.imageUrl && (
+        <Image
+          source={{ uri: item.imageUrl }}
+          style={styles.ingredientImage}
+        />
+      )}
+      <View style={styles.ingredientInfo}>
+        <Text style={styles.ingredientName}>{item.name}</Text>
+        <Text style={styles.ingredientType}>{item.type}</Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -61,26 +133,6 @@ export default function NewRecipeScreen() {
     if (!result.canceled) {
       setImage(result.assets[0].uri);
       setImageName(result.assets[0].fileName || 'image.jpg');
-    }
-  };
-
-  const handleAddIngredient = () => {
-    if (currentIngredient && currentQuantity) {
-      setRecipe({
-        ...recipe,
-        ingredients: [
-          ...recipe.ingredients || [],
-          {
-            name: currentIngredient,
-            amount: {
-              value: parseFloat(currentQuantity),
-              unit: selectedUnit
-            }
-          }
-        ]
-      });
-      setCurrentIngredient('');
-      setCurrentQuantity('');
     }
   };
 
@@ -129,16 +181,16 @@ export default function NewRecipeScreen() {
       const recipeData = {
         ...recipe,
         isPublic,
-        ingredients: recipe?.ingredients?.map(ing => ({
-          name: ing.name,
+        ingredients: recipe.ingredients.map(ingredient => ({
+          ingredientId: ingredient.ingredientId,
           amount: {
-            value: ing.amount.value,
-            unit: ing.amount.unit
+            value: ingredient.amount.value,
+            unit: ingredient.amount.unit
           }
         })),
-        steps: recipe?.steps,
-        cookTimeMin: parseInt(recipe.cookTimeMin || '0'),
-        prepTimeMin: parseInt(recipe.prepTimeMin || '0')
+        steps: recipe.steps,
+        cookTimeMin: recipe.cookTimeMin || 0,
+        prepTimeMin: recipe.prepTimeMin || 0
       };
 
       formData.append(
@@ -199,8 +251,8 @@ export default function NewRecipeScreen() {
               <Text style={styles.label}>Preparation Time (minutes) *</Text>
               <TextInput
                 style={styles.input}
-                value={recipe.prepTimeMin}
-                onChangeText={(text) => setRecipe({ ...recipe, prepTimeMin: text })}
+                value={recipe.prepTimeMin?.toString() || '0'}
+                onChangeText={(text) => setRecipe({ ...recipe, prepTimeMin: parseInt(text) || 0 })}
                 placeholder="Enter preparation time in minutes"
                 keyboardType="numeric"
               />
@@ -210,8 +262,8 @@ export default function NewRecipeScreen() {
               <Text style={styles.label}>Cooking Time (minutes) *</Text>
               <TextInput
                 style={styles.input}
-                value={recipe.cookTimeMin}
-                onChangeText={(text) => setRecipe({ ...recipe, cookTimeMin: text })}
+                value={recipe.cookTimeMin?.toString() || '0'}
+                onChangeText={(text) => setRecipe({ ...recipe, cookTimeMin: parseInt(text) || 0 })}
                 placeholder="Enter cooking time in minutes"
                 keyboardType="numeric"
               />
@@ -277,41 +329,32 @@ export default function NewRecipeScreen() {
 
             <View style={styles.field}>
               <Text style={styles.label}>Ingredients *</Text>
-              <View style={styles.listContainer}>
-                {recipe.ingredients?.map((ingredient, index) => (
-                  <View key={index} style={styles.listItem}>
-                    <Text style={styles.listItemText}>
-                      {ingredient.name} - {ingredient.amount.value} {ingredient.amount.unit}
-                    </Text>
-                  </View>
-                ))}
-                <View style={styles.addItemContainer}>
-                  <TextInput
-                    style={[styles.input, styles.smallInput]}
-                    value={currentIngredient}
-                    onChangeText={setCurrentIngredient}
-                    placeholder="Ingredient name"
-                  />
-                  <TextInput
-                    style={[styles.input, styles.smallInput]}
-                    value={currentQuantity}
-                    onChangeText={setCurrentQuantity}
-                    placeholder="Quantity"
-                    keyboardType="numeric"
-                  />
-                  <Picker
-                    selectedValue={selectedUnit}
-                    style={styles.unitPicker}
-                    onValueChange={(value) => setSelectedUnit(value)}
-                  >
-                    <Picker.Item label="g" value="g" />
-                    <Picker.Item label="kg" value="kg" />
-                    <Picker.Item label="pc" value="pc" />
-                  </Picker>
-                  <TouchableOpacity style={styles.addButton} onPress={handleAddIngredient}>
-                    <FontAwesome name="plus" size={16} color="#fff" />
-                  </TouchableOpacity>
-                </View>
+              <View style={styles.ingredientsList}>
+                {recipe.ingredients && recipe.ingredients.length > 0 && (
+                  recipe.ingredients.map((ingredient, index) => {
+                    const ingredientData = ingredients.find(i => i.id === ingredient.ingredientId);
+                    return (
+                      <View key={index} style={styles.ingredientItem}>
+                        <Text style={styles.ingredientText}>
+                          {ingredientData?.name} - {ingredient.amount.value} {ingredient.amount.unit}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => handleRemoveIngredient(index)}
+                          style={styles.removeButton}
+                        >
+                          <FontAwesome name="times" size={16} color="#FF0000" />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })
+                )}
+                <TouchableOpacity
+                  style={styles.addIngredientButton}
+                  onPress={() => setShowIngredientModal(true)}
+                >
+                  <FontAwesome name="plus" size={16} color="#fff" style={styles.addButtonIcon} />
+                  <Text style={styles.addIngredientButtonText}>Add Ingredient</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -380,6 +423,119 @@ export default function NewRecipeScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      <Modal
+        visible={showIngredientModal}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Ingredient</Text>
+              <TouchableOpacity
+                onPress={() => setShowIngredientModal(false)}
+                style={styles.closeButton}
+              >
+                <FontAwesome name="times" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.searchContainer}>
+              <View style={styles.searchInputContainer}>
+                <FontAwesome name="search" size={16} color="#666" style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder="Search ingredients..."
+                  placeholderTextColor="#666"
+                />
+                {searchQuery ? (
+                  <TouchableOpacity
+                    onPress={() => setSearchQuery('')}
+                    style={styles.clearSearchButton}
+                  >
+                    <FontAwesome name="times-circle" size={16} color="#666" />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeFilterContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.typeFilter,
+                  selectedType === 'ALL' && styles.typeFilterSelected
+                ]}
+                onPress={() => setSelectedType('ALL')}
+              >
+                <Text style={[
+                  styles.typeFilterText,
+                  selectedType === 'ALL' && styles.typeFilterTextSelected
+                ]}>All</Text>
+              </TouchableOpacity>
+              {INGREDIENT_TYPES.map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.typeFilter,
+                    selectedType === type && styles.typeFilterSelected
+                  ]}
+                  onPress={() => setSelectedType(type as IngredientType)}
+                >
+                  <Text style={[
+                    styles.typeFilterText,
+                    selectedType === type && styles.typeFilterTextSelected
+                  ]}>{type}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <FlatList
+              data={filteredIngredients}
+              renderItem={renderIngredientItem}
+              keyExtractor={item => item.id}
+              style={styles.ingredientsList}
+              ListEmptyComponent={
+                <View style={styles.emptyListContainer}>
+                  <Text style={styles.emptyListText}>No ingredients found</Text>
+                </View>
+              }
+            />
+
+            <View style={styles.quantityContainer}>
+              <TextInput
+                style={styles.quantityInput}
+                value={currentQuantity}
+                onChangeText={setCurrentQuantity}
+                placeholder="Quantity"
+                keyboardType="numeric"
+              />
+              <Picker
+                selectedValue={selectedUnit}
+                onValueChange={(value) => setSelectedUnit(value)}
+                style={styles.unitPicker}
+              >
+                <Picker.Item label="g" value="g" />
+                <Picker.Item label="kg" value="kg" />
+                <Picker.Item label="pc" value="pc" />
+              </Picker>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.addIngredientButton,
+                (!selectedIngredient || !currentQuantity) && styles.disabledButton
+              ]}
+              onPress={handleAddIngredient}
+              disabled={!selectedIngredient || !currentQuantity}
+            >
+              <Text style={styles.addIngredientButtonText}>Pick ingredients</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -554,5 +710,162 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
     minHeight: 40,
+  },
+  ingredientItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+    backgroundColor: '#fff',
+  },
+  selectedIngredientItem: {
+    backgroundColor: '#f0f0f0',
+  },
+  ingredientImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  ingredientName: {
+    flex: 1,
+    fontSize: 16,
+  },
+  ingredientType: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  ingredientsList: {
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  quantityInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 8,
+    padding: 8,
+    marginRight: 8,
+  },
+  addIngredientButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFD700',
+    padding: 12,
+    borderRadius: 0,
+  },
+  disabledButton: {
+    backgroundColor: '#E5E5EA',
+  },
+  addButtonIcon: {
+    marginRight: 8,
+  },
+  addIngredientButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  removeButton: {
+    padding: 8,
+  },
+  ingredientText: {
+    flex: 1,
+    fontSize: 16,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 16,
+  },
+  clearSearchButton: {
+    padding: 4,
+  },
+  typeFilterContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  typeFilter: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F2F2F7',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  typeFilterSelected: {
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
+  },
+  typeFilterText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  typeFilterTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  ingredientInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  emptyListContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyListText: {
+    fontSize: 16,
+    color: '#666',
   },
 }); 
