@@ -1,3 +1,5 @@
+import { RecipeIngredient } from ".";
+
 export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER';
 
 export type FoodOrigin = 'THAI' | 'CHINESE' | 'FRENCH' | 'ITALIAN' | 'USA' | 'SPANISH';
@@ -7,25 +9,14 @@ export type RelativePrice = 'CHEAP' | 'MODERATE' | 'EXPENSIVE' ;
 export interface RecipeDto {
   id: string;
   name: string;
-  description?: string;
-  imageUrl?: string;
-  cookTimeMin?: string;
-  prepTimeMin?: string;
-  mealTypes: string[];
-  isPublic: boolean;
-  categoryIds: string[];
-  ingredients: {
-    name: string;
-    amount: {
-      value: number;
-      unit: string;
-    };
-  }[];
+  description: string;
+  ingredients: RecipeIngredient[];
   steps: string[];
-  averagePrice: {
-    value: number;
-    unit: string;
-  };
+  prepTimeMin: string;
+  cookTimeMin: string;
+  servings: number;
   foodOrigins?: FoodOrigin[];
+  mealTypes?: MealType[];
   relativePrice?: RelativePrice;
+  imageUrl?: string;
 } 

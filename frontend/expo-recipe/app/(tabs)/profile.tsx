@@ -67,10 +67,12 @@ export default function ProfileScreen() {
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
-    if (tab === 'saved' && savedRecipes.length === 0) {
+    if (tab === 'saved') { //&& savedRecipes.length === 0
       loadSavedRecipes();
-    } else if (tab === 'shared' && sharedRecipes.length === 0) {
+    } else if (tab === 'shared' ) { //&& sharedRecipes.length === 0
       loadSharedRecipes();
+    } else if (tab === 'recipes') {
+      loadUserRecipes();
     }
   };
 

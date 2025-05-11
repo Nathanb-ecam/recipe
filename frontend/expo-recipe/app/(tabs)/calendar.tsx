@@ -177,7 +177,7 @@ export default function CalendarScreen() {
   const renderAddButton = () => (
     <TouchableOpacity
       style={styles.addButton}
-      onPress={() => setModalVisible(true)}
+      onPress={() => router.push('/meal-event/new')}
     >
       <FontAwesome name="plus" size={24} color="#FFD700" />
     </TouchableOpacity>

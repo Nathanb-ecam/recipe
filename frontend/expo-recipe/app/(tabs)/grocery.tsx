@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Keyboard, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { groceryApi } from '../../services/groceryApi';
 import { GroceryIngredient } from '../../types/grocery';
@@ -116,7 +116,7 @@ const mockItem : GroceryIngredient = {id: 'example', ingredientName: 'ex: banana
               <FontAwesome
                 name={item.alreadyBought ? 'check-circle' : 'circle-o'}
                 size={24}
-                color={item.alreadyBought ? '#34C759' : '#8E8E93'}
+                color={item.alreadyBought ? '#FFD700' : '#8E8E93'}
               />
             </TouchableOpacity>
 

@@ -55,9 +55,15 @@ export default function HomeScreen() {
     }, [])
   );
 
-  const handleIngredientsSubmit = () => {
-    // TODO: Implement ChatGPT integration
-    console.log('Ingredients submitted:', ingredients);
+  const handleGetSuggestions = () => {
+    if (!ingredients.trim()) {
+      alert('Please enter some ingredients');
+      return;
+    }
+    router.push({
+      pathname: '/recipe/ideas',      
+      params: { ingredients: ingredients.trim() }
+    });
   };
 
   const handleRecipePress = (recipe: RecipeDto) => {
@@ -111,7 +117,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
       <ScrollView style={styles.container}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Create New Recipe</Text>
+          <Text style={[styles.title, styles.titleBottomMargin]}>Create New Recipe</Text>
           <View style={styles.createRecipeButtons}>
             <TouchableOpacity 
               style={styles.createRecipeButton}
@@ -138,7 +144,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Find ideas</Text>
+          <Text style={[styles.title, styles.titleBottomMargin]}>Find ideas</Text>
           <View style={styles.ingredientsInputContainer}>
             <TextInput
               style={styles.ingredientsInput}
@@ -149,7 +155,7 @@ export default function HomeScreen() {
             />
             <TouchableOpacity
               style={styles.submitButton}
-              onPress={handleIngredientsSubmit}
+              onPress={handleGetSuggestions}
             >
               <Text style={styles.submitButtonText}>Get Suggestions</Text>
             </TouchableOpacity>
@@ -158,7 +164,7 @@ export default function HomeScreen() {
 
         {upcomingMeals.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Upcoming Meals</Text>
+            <Text style={[styles.title, styles.titleBottomMargin]}>Upcoming Meals</Text>
             <View style={styles.daysContainer}>
             {upcomingMeals.map((day, index) => (
               <View key={index} style={styles.dayColumn}>
@@ -182,7 +188,10 @@ export default function HomeScreen() {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Popular Recipes</Text>
+          <View style={[styles.sectionTitleContainer, styles.titleBottomMargin]}>
+            <Text style={styles.title}>Popular Recipes</Text>
+            <Text style={styles.seeMore}>See more</Text>
+          </View>
           <View style={styles.recipesContainer}>
             <FlatList
               data={recipes}
@@ -209,14 +218,15 @@ const styles = StyleSheet.create({
   },
   section: {
     padding: 16,
+    marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
-  sectionTitle: {
+  title: {
     fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontWeight: 'bold',    
   },
+
   daysContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -319,6 +329,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   createRecipeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#000',
+  },
+  titleBottomMargin: {
+    marginBottom: 16,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',    
+  },
+  seeMore: {
     fontSize: 12,
     fontWeight: '600',
     color: '#000',

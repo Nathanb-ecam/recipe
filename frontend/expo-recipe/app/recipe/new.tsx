@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Platform, Switch } from 'react-native';
-import { router } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { recipeApi } from '../../services/recipeApi';
@@ -163,219 +163,224 @@ export default function NewRecipeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
-        <View style={styles.header}>          
-          <Text style={styles.title}>Create your own Recipe</Text>          
-        </View>
+    <>
+       <Tabs.Screen options={{
+        title: 'Create Recipe',        
+        }} />
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView style={styles.container}>
+          {/* <View style={styles.header}>          
+            <Text style={styles.title}>Create your own Recipe</Text>          
+          </View> */}
 
-        <View style={styles.form}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Name *</Text>
-            <TextInput
-              style={styles.input}
-              value={recipe.name}
-              onChangeText={(text) => setRecipe({ ...recipe, name: text })}
-              placeholder="Enter recipe name"
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Description *</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={recipe.description}
-              onChangeText={(text) => setRecipe({ ...recipe, description: text })}
-              placeholder="Enter recipe description"
-              multiline
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Preparation Time (minutes) *</Text>
-            <TextInput
-              style={styles.input}
-              value={recipe.prepTimeMin}
-              onChangeText={(text) => setRecipe({ ...recipe, prepTimeMin: text })}
-              placeholder="Enter preparation time in minutes"
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Cooking Time (minutes) *</Text>
-            <TextInput
-              style={styles.input}
-              value={recipe.cookTimeMin}
-              onChangeText={(text) => setRecipe({ ...recipe, cookTimeMin: text })}
-              placeholder="Enter cooking time in minutes"
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Meal Types *</Text>
-            <View style={styles.tagsContainer}>
-              {MEAL_TYPES.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.tag,
-                    recipe.mealTypes?.includes(type) && styles.tagSelected
-                  ]}
-                  onPress={() => handleMealTypeToggle(type)}
-                >
-                  <Text style={[
-                    styles.tagText,
-                    recipe.mealTypes?.includes(type) && styles.tagTextSelected
-                  ]}>
-                    {type}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Cuisine type</Text>
-            <View style={styles.tagsContainer}>
-              {FOOD_ORIGINS.map((origin) => (
-                <TouchableOpacity
-                  key={origin}
-                  style={[
-                    styles.tag,
-                    recipe.foodOrigins?.includes(origin) && styles.tagSelected
-                  ]}
-                  onPress={() => handleFoodOriginToggle(origin)}
-                >
-                  <Text style={[
-                    styles.tagText,
-                    recipe.foodOrigins?.includes(origin) && styles.tagTextSelected
-                  ]}>
-                    {origin}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.field}>
-            <View style={styles.toggleContainer}>
-              <Text style={styles.label}>Public Recipe</Text>
-              <Switch
-                value={isPublic}
-                onValueChange={setIsPublic}
-                trackColor={{ false: '#767577', true: '#FFD700' }}
-                thumbColor={isPublic ? '#fff' : '#f4f3f4'}
+          <View style={styles.form}>
+            <View style={styles.field}>
+              <Text style={styles.label}>Name *</Text>
+              <TextInput
+                style={styles.input}
+                value={recipe.name}
+                onChangeText={(text) => setRecipe({ ...recipe, name: text })}
+                placeholder="Enter recipe name"
               />
             </View>
-          </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Ingredients *</Text>
-            <View style={styles.listContainer}>
-              {recipe.ingredients?.map((ingredient, index) => (
-                <View key={index} style={styles.listItem}>
-                  <Text style={styles.listItemText}>
-                    {ingredient.name} - {ingredient.amount.value} {ingredient.amount.unit}
-                  </Text>
-                </View>
-              ))}
-              <View style={styles.addItemContainer}>
-                <TextInput
-                  style={[styles.input, styles.smallInput]}
-                  value={currentIngredient}
-                  onChangeText={setCurrentIngredient}
-                  placeholder="Ingredient name"
-                />
-                <TextInput
-                  style={[styles.input, styles.smallInput]}
-                  value={currentQuantity}
-                  onChangeText={setCurrentQuantity}
-                  placeholder="Quantity"
-                  keyboardType="numeric"
-                />
-                <Picker
-                  selectedValue={selectedUnit}
-                  style={styles.unitPicker}
-                  onValueChange={(value) => setSelectedUnit(value)}
-                >
-                  <Picker.Item label="g" value="g" />
-                  <Picker.Item label="kg" value="kg" />
-                  <Picker.Item label="pc" value="pc" />
-                </Picker>
-                <TouchableOpacity style={styles.addButton} onPress={handleAddIngredient}>
-                  <FontAwesome name="plus" size={16} color="#fff" />
-                </TouchableOpacity>
+            <View style={styles.field}>
+              <Text style={styles.label}>Description *</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={recipe.description}
+                onChangeText={(text) => setRecipe({ ...recipe, description: text })}
+                placeholder="Enter recipe description"
+                multiline
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Preparation Time (minutes) *</Text>
+              <TextInput
+                style={styles.input}
+                value={recipe.prepTimeMin}
+                onChangeText={(text) => setRecipe({ ...recipe, prepTimeMin: text })}
+                placeholder="Enter preparation time in minutes"
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Cooking Time (minutes) *</Text>
+              <TextInput
+                style={styles.input}
+                value={recipe.cookTimeMin}
+                onChangeText={(text) => setRecipe({ ...recipe, cookTimeMin: text })}
+                placeholder="Enter cooking time in minutes"
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Meal Types *</Text>
+              <View style={styles.tagsContainer}>
+                {MEAL_TYPES.map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.tag,
+                      recipe.mealTypes?.includes(type) && styles.tagSelected
+                    ]}
+                    onPress={() => handleMealTypeToggle(type)}
+                  >
+                    <Text style={[
+                      styles.tagText,
+                      recipe.mealTypes?.includes(type) && styles.tagTextSelected
+                    ]}>
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
-          </View>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Steps *</Text>
-            <View style={styles.listContainer}>
-              {recipe.steps?.map((step, index) => (
-                <View key={index} style={styles.listItem}>
-                  <Text style={styles.listItemText}>
-                    {index + 1}. {step}
-                  </Text>
-                </View>
-              ))}
-              <View style={styles.addItemContainer}>
-                <TextInput
-                  style={[styles.input, styles.stepInput]}
-                  value={currentStep}
-                  onChangeText={setCurrentStep}
-                  placeholder="Enter step instruction"
-                  multiline
-                />
-                <TouchableOpacity style={styles.addButton} onPress={handleAddStep}>
-                  <FontAwesome name="plus" size={16} color="#fff" />
-                </TouchableOpacity>
+            <View style={styles.field}>
+              <Text style={styles.label}>Cuisine type</Text>
+              <View style={styles.tagsContainer}>
+                {FOOD_ORIGINS.map((origin) => (
+                  <TouchableOpacity
+                    key={origin}
+                    style={[
+                      styles.tag,
+                      recipe.foodOrigins?.includes(origin) && styles.tagSelected
+                    ]}
+                    onPress={() => handleFoodOriginToggle(origin)}
+                  >
+                    <Text style={[
+                      styles.tagText,
+                      recipe.foodOrigins?.includes(origin) && styles.tagTextSelected
+                    ]}>
+                      {origin}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
-          </View>
 
-          <Text style={styles.label}>Cover Image *</Text>
-          <View style={styles.imagePickerContainer}>
-            <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-              {image ? (
-                <Image source={{ uri: image }} style={styles.image} />
-              ) : (
+            <View style={styles.field}>
+              <View style={styles.toggleContainer}>
+                <Text style={styles.label}>Public Recipe</Text>
+                <Switch
+                  value={isPublic}
+                  onValueChange={setIsPublic}
+                  trackColor={{ false: '#767577', true: '#FFD700' }}
+                  thumbColor={isPublic ? '#fff' : '#f4f3f4'}
+                />
+              </View>
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Ingredients *</Text>
+              <View style={styles.listContainer}>
+                {recipe.ingredients?.map((ingredient, index) => (
+                  <View key={index} style={styles.listItem}>
+                    <Text style={styles.listItemText}>
+                      {ingredient.name} - {ingredient.amount.value} {ingredient.amount.unit}
+                    </Text>
+                  </View>
+                ))}
+                <View style={styles.addItemContainer}>
+                  <TextInput
+                    style={[styles.input, styles.smallInput]}
+                    value={currentIngredient}
+                    onChangeText={setCurrentIngredient}
+                    placeholder="Ingredient name"
+                  />
+                  <TextInput
+                    style={[styles.input, styles.smallInput]}
+                    value={currentQuantity}
+                    onChangeText={setCurrentQuantity}
+                    placeholder="Quantity"
+                    keyboardType="numeric"
+                  />
+                  <Picker
+                    selectedValue={selectedUnit}
+                    style={styles.unitPicker}
+                    onValueChange={(value) => setSelectedUnit(value)}
+                  >
+                    <Picker.Item label="g" value="g" />
+                    <Picker.Item label="kg" value="kg" />
+                    <Picker.Item label="pc" value="pc" />
+                  </Picker>
+                  <TouchableOpacity style={styles.addButton} onPress={handleAddIngredient}>
+                    <FontAwesome name="plus" size={16} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Steps *</Text>
+              <View style={styles.listContainer}>
+                {recipe.steps?.map((step, index) => (
+                  <View key={index} style={styles.listItem}>
+                    <Text style={styles.listItemText}>
+                      {index + 1}. {step}
+                    </Text>
+                  </View>
+                ))}
+                <View style={styles.addItemContainer}>
+                  <TextInput
+                    style={[styles.input, styles.stepInput]}
+                    value={currentStep}
+                    onChangeText={setCurrentStep}
+                    placeholder="Enter step instruction"
+                    multiline
+                  />
+                  <TouchableOpacity style={styles.addButton} onPress={handleAddStep}>
+                    <FontAwesome name="plus" size={16} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+            <Text style={styles.label}>Cover Image *</Text>
+            <View style={styles.imagePickerContainer}>
+              <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+                {image ? (
+                  <Image source={{ uri: image }} style={styles.image} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <FontAwesome name="image" size={24} color="#666" />
+                    <Text style={styles.imagePlaceholderText}>Select from Gallery</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.imagePicker} onPress={takePhoto}>
                 <View style={styles.imagePlaceholder}>
-                  <FontAwesome name="image" size={24} color="#666" />
-                  <Text style={styles.imagePlaceholderText}>Select from Gallery</Text>
+                  <FontAwesome name="camera" size={24} color="#666" />
+                  <Text style={styles.imagePlaceholderText}>Open camera</Text>
                 </View>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.imagePicker} onPress={takePhoto}>
-              <View style={styles.imagePlaceholder}>
-                <FontAwesome name="camera" size={24} color="#666" />
-                <Text style={styles.imagePlaceholderText}>Open camera</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+              </TouchableOpacity>
+            </View>
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={() => router.back()}
-            >
-              <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.createButton]}
-              onPress={handleCreateRecipe}
-              disabled={loading}
-            >
-              <Text style={styles.createButtonText}>
-                {loading ? 'Creating...' : 'Create Recipe'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => router.back()}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.createButton]}
+                onPress={handleCreateRecipe}
+                disabled={loading}
+              >
+                <Text style={styles.createButtonText}>
+                  {loading ? 'Creating...' : 'Create Recipe'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 }
 

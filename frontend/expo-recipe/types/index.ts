@@ -59,6 +59,7 @@ export interface AuthResponse {
 
 export interface DailyMealPlan {
   date: string;
+  eventName?: string;
   breakfast: string;
   lunch: string;
   dinner: string;

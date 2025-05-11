@@ -2,9 +2,9 @@ import { userApi } from './userApi';
 import { recipeApi } from './recipeApi';
 import { calendarApi } from './calendarApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { DailyMealPlan } from '../types';
 import { API_URL } from './config';
+import { RecipeDto } from '../types/recipe';
 
 // Export all API modules under a single namespace
 export const api = {
@@ -17,13 +17,9 @@ export const api = {
       const accessToken = await AsyncStorage.getItem('accessToken');
       const user = await AsyncStorage.getItem('user');
       const tenantId = user ? JSON.parse(user).id : null;
-      const response = await axios.get(`${API_URL}/users/${tenantId}/calendar/${date}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await calendarApi.getMealPlan(date);
       
-      const mealPlan = response.data;
+      const mealPlan = response;
       console.log('Initial meal plan response:', mealPlan);
       
       // Fetch recipe names for each meal if they exist
@@ -36,7 +32,7 @@ export const api = {
       console.log('Recipe IDs to fetch:', recipeIds);
 
       if (recipeIds.length > 0) {
-        const recipes = await this.getRecipesFromIds(recipeIds);
+        const recipes = await recipeApi.getRecipesFromIds(recipeIds);
         console.log('Fetched recipes:', recipes);
         
         if (mealPlan.breakfastRecipeId) {
@@ -88,26 +84,17 @@ export const api = {
       
       const requestBody: any = { date };
       
-      if (mealPlan.breakfastRecipe?.id) {
-        requestBody.breakfastRecipeId = mealPlan.breakfastRecipe.id;
+      if (mealPlan.breakfastRecipeId) {
+        requestBody.breakfastRecipeId = mealPlan.breakfastRecipeId;
       }
-      if (mealPlan.lunchRecipe?.id) {
-        requestBody.lunchRecipeId = mealPlan.lunchRecipe.id;
+      if (mealPlan.lunchRecipeId) {
+        requestBody.lunchRecipeId = mealPlan.lunchRecipeId;
       }
-      if (mealPlan.dinnerRecipe?.id) {
-        requestBody.dinnerRecipeId = mealPlan.dinnerRecipe.id;
+      if (mealPlan.dinnerRecipeId) {
+        requestBody.dinnerRecipeId = mealPlan.dinnerRecipeId;
       }
 
-      const response = await axios.put(
-        `${API_URL}/users/${tenantId}/calendar`,
-        requestBody,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-      return response.data;
+      await calendarApi.updateMealPlan(date, requestBody);
     } catch (error: any) {
       const tokenRefreshed = await handleApiError(error);
       if (tokenRefreshed) {
@@ -117,6 +104,27 @@ export const api = {
       throw error;
     }
   },
+
+  async getRecipeIdeas(ingredients: string[]): Promise<string[]> {
+    
+    try {
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      const response = await fetch(`${API_URL}/recipes/ideas`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(ingredients),
+      });
+      console.log('Recipe ideas response:', response);
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting recipe ideas:', error);
+      throw error;
+    }
+  },
+
 };
 
 const handleApiError = async (error: any) => {
