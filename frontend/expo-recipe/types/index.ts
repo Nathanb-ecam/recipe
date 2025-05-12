@@ -6,32 +6,14 @@ export interface Amount {
 }
 
 export interface RecipeIngredient {
-  name: string;
+  ingredientId: string;
+  // name: string;
   amount: Amount;
 }
 
-export interface RecipeStep {
-  instruction: string;
-  duration: Amount;
-}
 
 
-export interface RecipeDto {
-  id: string;
-  name: string;
-  // duration: Amount;
-  cookTimeMin: string;
-  prepTimeMin: string;
-  description: string;
-  isPublic: boolean;
-  mealTypes: MealType[];
-  imageUrl: string;
-  categoryIds: string[];
-  // ingredients: RecipeIngredient[];  
-  // steps: RecipeStep[];
-  steps: string[];
-  averagePrice: Amount;
-}
+
 
 export type RegisterRequest = {
   email: string;

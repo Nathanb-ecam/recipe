@@ -51,7 +51,7 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       loadUpcomingMeals();
-      loadRecipes();
+      // loadRecipes();
     }, [])
   );
 

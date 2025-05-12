@@ -108,7 +108,7 @@ const mockItem : GroceryIngredient = {id: 'example', ingredientName: 'ex: banana
 
       <View style={styles.list}>
         {items.map((item, index) => (
-          <View key={item.id} style={styles.itemContainer}>
+          <View key={item.ingredientName} style={styles.itemContainer}>
             <TouchableOpacity
               style={styles.checkbox}
               onPress={() => handleItemComplete(item)}

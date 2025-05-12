@@ -1,4 +1,4 @@
-import { RecipeDto, IngredientDto } from '../types/recipe';
+import { RecipeDto, IngredientDto, RecipeIngredientDetailedDto, RecipeWithIngredientsDetailedDto } from '../types/recipe';
 import { getAccessToken, getTenantId } from './authUtils';
 import { API_URL } from './config';
 import { MealType, FoodOrigin, RelativePrice } from '../types/constants';
@@ -55,6 +55,22 @@ export const recipeApi = {
       throw error;
     }
   },
+
+  getRecipeById: async (recipeId: string): Promise<RecipeDto> => {
+    try {
+      const response = await fetch(`${API_URL}/recipes/${recipeId}`, {
+        headers: {
+          'Authorization': `Bearer ${await getAccessToken()}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch recipe');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching recipe:', error);
+      throw error;
+    }
+  },
+
 
   // Get recipes by their IDs
   getRecipesFromIds: async (recipesIds: string[]): Promise<RecipeDto[]> => {
@@ -238,6 +254,8 @@ export const recipeApi = {
     }
   },
 
+
+
   getIngredients: async (): Promise<IngredientDto[]> => {
     try {
       const response = await fetch(`${API_URL}/ingredients`, {
@@ -252,4 +270,39 @@ export const recipeApi = {
       throw error;
     }
   },
+
+  getIngredientsByIds: async (ingredientsIds: string[]): Promise<IngredientDto[]> => {
+    try {
+      const response = await fetch(`${API_URL}/ingredients/batch`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${await getAccessToken()}`,  
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ingredientsIds),
+      });
+      if (!response.ok) throw new Error('Failed to fetch ingredients');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching ingredients by IDs:', error);
+      throw error;
+    }
+  },
+
+  getRecipeByIdWithIngredientsDetailed: async (recipeId: string): Promise<RecipeWithIngredientsDetailedDto> => {
+    try {
+      const response = await fetch(`${API_URL}/recipes/${recipeId}/ingredients-detailed`, {
+        headers: {
+          'Authorization': `Bearer ${await getAccessToken()}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch recipe with ingredients detailed');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching recipe with ingredients detailed:', error);
+      throw error;
+    }
+  },
+
+
 }; 

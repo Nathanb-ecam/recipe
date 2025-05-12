@@ -1,3 +1,5 @@
+import { Amount } from ".";
+
 export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER';
 
 export type FoodOrigin = 'THAI' | 'CHINESE' | 'FRENCH' | 'ITALIAN' | 'USA' | 'SPANISH';
@@ -22,11 +24,10 @@ export interface IngredientDto {
 
 export interface RecipeIngredient {
   ingredientId: string;
-  amount: {
-    value: number;
-    unit: string;
-  };
+  amount: Amount;
 }
+
+
 
 export interface RecipeDto {
   id: string;
@@ -42,3 +43,26 @@ export interface RecipeDto {
   relativePrice?: RelativePrice;
   imageUrl?: string;
 } 
+
+
+export interface RecipeIngredientDetailed {
+  ingredient: IngredientDto;
+  amount: Amount;
+}
+
+export interface RecipeWithIngredientsDetailedDto {
+  id: string;
+  name: string;
+  description: string;
+  ingredients: RecipeIngredientDetailed[];
+  steps: string[];
+  prepTimeMin: number;
+  cookTimeMin: number;
+  servings: number;
+  foodOrigins?: FoodOrigin[];
+  mealTypes?: MealType[];
+  relativePrice?: RelativePrice;
+  imageUrl?: string;
+} 
+
+

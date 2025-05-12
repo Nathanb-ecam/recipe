@@ -168,7 +168,7 @@ export default function NewRecipeScreen() {
   };
 
   const handleCreateRecipe = async () => {
-    if (!recipe.name || !recipe.description || !image || recipe.ingredients?.length === 0 || recipe.steps?.length === 0) {
+    if (!recipe.name || !image || recipe.ingredients?.length === 0 || recipe.steps?.length === 0) {
       alert('Please fill in all required fields and select an image');
       return;
     }
@@ -181,7 +181,7 @@ export default function NewRecipeScreen() {
       const recipeData = {
         ...recipe,
         isPublic,
-        ingredients: recipe.ingredients.map(ingredient => ({
+        ingredients: recipe?.ingredients?.map(ingredient => ({
           ingredientId: ingredient.ingredientId,
           amount: {
             value: ingredient.amount.value,

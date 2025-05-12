@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, SafeAreaView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack, Tabs } from 'expo-router';
 import { recipeApi } from '../../services/recipeApi';
-import { RecipeDto, IngredientDto } from '../../types/recipe';
+import { RecipeDto, IngredientDto, RecipeWithIngredientsDetailedDto, RecipeIngredientDetailed } from '../../types/recipe';
 import { FontAwesome } from '@expo/vector-icons';
 import { api } from '@/services/api';
 import { API_ASSET_URL } from '@/services/config';
@@ -10,26 +10,24 @@ import { API_ASSET_URL } from '@/services/config';
 export default function RecipeScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const [recipe, setRecipe] = useState<RecipeDto | null>(null);
-  const [ingredients, setIngredients] = useState<IngredientDto[]>([]);
+  // const [recipe, setRecipe] = useState<RecipeDto | null>(null);
+  const [recipe, setRecipe] = useState<RecipeWithIngredientsDetailedDto | null>(null);
+  const [ingredients, setIngredients] = useState<RecipeIngredientDetailed[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    loadRecipe();
+    loadRecipeWithIngredientsDetailed();
     checkIfSaved(id as string);
   }, [id]);
 
-  const loadRecipe = async () => {
+  const loadRecipeWithIngredientsDetailed = async () => {
     try {
-      const data = await recipeApi.getRecipesFromIds([id as string]);
-      if (data.length > 0) {
-        setRecipe(data[0]);
-        // Load ingredients data for the recipe
-        const ingredientsData = await recipeApi.getIngredients();
-        setIngredients(ingredientsData);
-        router.setParams({ title: data[0].name });
-      }
+      const recipe = await recipeApi.getRecipeByIdWithIngredientsDetailed(id as string);      
+      setRecipe(recipe);            
+      setIngredients(recipe.ingredients);
+      router.setParams({ title: recipe.name });
+      
     } catch (error) {
       console.error('Error loading recipe:', error);
     } finally {
@@ -78,7 +76,7 @@ export default function RecipeScreen() {
     );
   }
 
-  // console.log(recipe);
+  console.log(recipe);
 
   return (
     <>
@@ -123,17 +121,16 @@ export default function RecipeScreen() {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Ingredients</Text>
                 <View style={styles.ingredientsGrid}>
-                  {recipe.ingredients.map((ingredient, index) => {
-                    const ingredientData = ingredients.find(i => i.id === ingredient.ingredientId);
+                  {recipe.ingredients.map((ingredient, index) => {                    
                     return (
                       <View key={index} style={styles.ingredientCard}>
                         <Image
-                          source={{ uri: API_ASSET_URL + ingredientData?.imageUrl || 'https://via.placeholder.com/100' }}
+                          source={{ uri: API_ASSET_URL + ingredient.ingredient?.imageUrl || 'https://via.placeholder.com/100' }}
                           style={styles.ingredientImage}
                           resizeMode="cover"
                         />
                         <Text style={styles.ingredientName} numberOfLines={2}>
-                          {ingredientData?.name}
+                          {ingredient.ingredient?.name}
                         </Text>
                         <Text style={styles.ingredientAmount}>
                           {ingredient?.amount?.value} {ingredient?.amount?.unit}
