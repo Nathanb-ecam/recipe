@@ -1,8 +1,12 @@
 package com.example.recipe.mapper;
 
 import com.example.recipe.dto.RecipeDto;
+import com.example.recipe.dto.RecipeWithIngredientsDetailedDto;
 import com.example.recipe.entity.Recipe;
+import com.example.recipe.model.RecipeIngredientDetailed;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class RecipeMapper implements IMapper<Recipe, RecipeDto> {
@@ -60,6 +64,25 @@ public class RecipeMapper implements IMapper<Recipe, RecipeDto> {
         if(recipe.getFoodOrigins() != null) recipeDto.setFoodOrigins(recipe.getFoodOrigins());
 
         return recipeDto;
+    }
+
+    public RecipeWithIngredientsDetailedDto toIngredientDetailedDto(RecipeDto recipe, List<RecipeIngredientDetailed> ingredientsDetailed){
+        return new RecipeWithIngredientsDetailedDto(
+                recipe.getId(),
+                recipe.getName(),
+                recipe.getPrepTimeMin(),
+                recipe.getCookTimeMin(),
+                recipe.getDescription(),
+                recipe.isPublic(),
+                recipe.getMealTypes(),
+                recipe.getFoodOrigins(),
+                recipe.getImageUrl(),
+                recipe.getCategoryIds(),
+                ingredientsDetailed,
+                recipe.getSteps(),
+                recipe.getRelativePrice(),
+                recipe.getTenantId()
+        );
     }
 
 }

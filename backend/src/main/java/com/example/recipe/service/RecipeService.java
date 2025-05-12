@@ -1,18 +1,21 @@
 package com.example.recipe.service;
 
 import com.example.recipe.dto.RecipeDto;
+import com.example.recipe.dto.RecipeWithIngredientsDetailedDto;
 import com.example.recipe.dto.UserDto;
+import com.example.recipe.dto.lookup.IngredientDto;
 import com.example.recipe.entity.Recipe;
 import com.example.recipe.entity.User;
+import com.example.recipe.entity.lookup.Ingredient;
 import com.example.recipe.exception.DatabaseException;
 import com.example.recipe.exception.GenericException;
 import com.example.recipe.exception.NoContentException;
 import com.example.recipe.exception.UserIsNotTheResourceOwnerException;
+import com.example.recipe.mapper.IngredientMapper;
 import com.example.recipe.mapper.RecipeMapper;
 import com.example.recipe.mapper.UserMapper;
-import com.example.recipe.model.FoodOrigin;
-import com.example.recipe.model.MealType;
-import com.example.recipe.model.RelativePrice;
+import com.example.recipe.model.*;
+import com.example.recipe.repository.IngredientRepository;
 import com.example.recipe.repository.RecipeRepository;
 import com.example.recipe.repository.UserRepository;
 import com.example.recipe.utils.ReflectionUtils;
@@ -21,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,6 +39,8 @@ public class RecipeService implements CrudService<RecipeDto> {
     private final UserService userService;
     private final UserMapper userMapper;
     private final UserRepository userRepository;
+    private final IngredientMapper ingredientMapper;
+    private final IngredientRepository ingredientRepository;
 
     public void CheckIfRecipeBelongsToUser(String recipeId){
         /* TODO when RBAC is setup, an admin should be allowed to access any recipe */
@@ -218,8 +222,7 @@ public class RecipeService implements CrudService<RecipeDto> {
 
     public RecipeDto getOneById(String id) {
         var currentUserId = userService.getCurrentUserId();
-        log.info("currentUserId");
-        log.info(currentUserId);
+
         return recipeRepository
                 .findByIdAndIsPublicTrue(id)
                 .or(() -> recipeRepository.findByIdAndTenantId(id, currentUserId))
@@ -229,6 +232,41 @@ public class RecipeService implements CrudService<RecipeDto> {
 
 
     }
+
+    public RecipeWithIngredientsDetailedDto getOneWithIngredientsDetailedById(String id) {
+        try {
+            Recipe recipe = recipeRepository.findById(id)
+                    .orElseThrow(() -> new NoContentException("Recipe not found with ID: " + id));
+
+            RecipeDto recipeDto = recipeMapper.toDto(recipe);
+
+            // Enrich each RecipeIngredient with the full IngredientDto
+
+            List<RecipeIngredientDetailed> enrichedIngredients = recipeDto.getIngredients().stream()
+                    .map(ri -> {
+                        Ingredient ingredient = ingredientRepository.findById(ri.getIngredientId())
+                                .orElseThrow(() -> new NoContentException("Ingredient not found: " + ri.getIngredientId()));
+                        IngredientDto ingredientDto = ingredientMapper.toDto(ingredient); // map entity to DTO
+
+                        RecipeIngredientDetailed detailed = new RecipeIngredientDetailed();
+                        detailed.setIngredient(ingredientDto);
+                        detailed.setAmount(ri.getAmount());
+                        return detailed;
+                    })
+                    .collect(Collectors.toList());
+
+            return recipeMapper.toIngredientDetailedDto(recipeDto, enrichedIngredients);
+
+
+        } catch (DataAccessException e) {
+            throw new DatabaseException("Error accessing the database");
+        } catch (Exception e) {
+            throw new GenericException(e.getMessage());
+        }
+    }
+
+
+
 
 /*    public Recipe updateRecipe(String id, RecipeDto recipeDto){
         try{
@@ -297,5 +335,7 @@ public class RecipeService implements CrudService<RecipeDto> {
         }
 
     }
+
+
 }
 

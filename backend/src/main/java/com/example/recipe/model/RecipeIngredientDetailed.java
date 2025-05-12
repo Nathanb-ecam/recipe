@@ -4,11 +4,9 @@ package com.example.recipe.model;
 import com.example.recipe.dto.lookup.IngredientDto;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
-public class RecipeIngredient {
-    private String ingredientId;
+public class RecipeIngredientDetailed {
+    private IngredientDto ingredient;
     private Amount amount;
 }
 

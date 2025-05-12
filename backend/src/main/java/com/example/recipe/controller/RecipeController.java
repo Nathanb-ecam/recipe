@@ -1,7 +1,11 @@
 package com.example.recipe.controller;
 
 import com.example.recipe.dto.RecipeDto;
+import com.example.recipe.dto.RecipeWithIngredientsDetailedDto;
+import com.example.recipe.dto.lookup.IngredientDto;
 import com.example.recipe.entity.Recipe;
+import com.example.recipe.exception.DatabaseException;
+import com.example.recipe.exception.GenericException;
 import com.example.recipe.model.FoodOrigin;
 import com.example.recipe.model.MealType;
 import com.example.recipe.model.RelativePrice;
@@ -11,6 +15,7 @@ import com.example.recipe.utils.FileStorageUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/recipes")
@@ -97,6 +103,13 @@ public class RecipeController {
         RecipeDto recipe = recipeService.getOneById(id);
         return ResponseEntity.ok(recipe);
     }
+
+    @GetMapping("/{id}/ingredients-detailed")
+    public ResponseEntity<RecipeWithIngredientsDetailedDto> getRecipeWithIngredientsDetailedById(@PathVariable String id) {
+        RecipeWithIngredientsDetailedDto recipe = recipeService.getOneWithIngredientsDetailedById(id);
+        return ResponseEntity.ok(recipe);
+    }
+
 
 /*    @PutMapping("/{id}")
     public ResponseEntity<Recipe> updateRecipe(@PathVariable String id, @RequestBody RecipeDto updatedRecipe) {

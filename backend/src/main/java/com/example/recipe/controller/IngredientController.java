@@ -3,11 +3,14 @@ package com.example.recipe.controller;
 import com.example.recipe.dto.RecipeDto;
 import com.example.recipe.dto.lookup.IngredientDto;
 import com.example.recipe.entity.lookup.Ingredient;
+import com.example.recipe.exception.DatabaseException;
+import com.example.recipe.exception.GenericException;
 import com.example.recipe.mapper.IngredientMapper;
 import com.example.recipe.repository.IngredientRepository;
 import com.example.recipe.utils.FileStorageUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/ingredients")
@@ -74,4 +78,23 @@ public class IngredientController {
         ingredientRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
+
+    @GetMapping("/batch")
+    public ResponseEntity<List<IngredientDto>> getRecipeIngredientsById(@RequestBody List<String> ingredientsIds) {
+        try {
+            List<IngredientDto> ingredients = ingredientRepository
+                    .findAllById(ingredientsIds)
+                    .stream()
+                    .map(ingredientMapper::toDto)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(ingredients);
+        } catch (DataAccessException e) {
+            throw new DatabaseException("Error accessing the database");
+        } catch (Exception e) {
+            throw new GenericException(e.getMessage());
+        }
+    }
+
 }

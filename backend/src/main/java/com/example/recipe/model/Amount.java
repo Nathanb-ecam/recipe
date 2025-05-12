@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class Amount {
-    private double value = 0;
+    private int value = 0;
     private String unit ="";
 }
 
