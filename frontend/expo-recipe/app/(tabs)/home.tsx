@@ -75,14 +75,14 @@ export default function HomeScreen() {
   };
 
   const renderMealEvent = (mealEvent: any) => {
-    const hour = parseInt(mealEvent.hourMinString.split(':')[0]);
+    const mealType = mealEvent.mealType;
     let lineColor = '#000';
-    
-    if (hour < 12) {
+
+    if (mealType === 'BREAKFAST') {
       lineColor = '#007AFF'; // blue
-    } else if (hour < 15) {
+    } else if (mealType === 'LUNCH') {
       lineColor = '#FF9500'; // orange
-    } else if (hour < 17) {
+    } else if (mealType === 'DINNER') {
       lineColor = '#34C759'; // green
     } else {
       lineColor = '#8B4513'; // brown
@@ -92,7 +92,7 @@ export default function HomeScreen() {
       <View style={styles.mealEventItem}>
         <View style={[styles.verticalLine, { backgroundColor: lineColor }]} />
         <View style={styles.mealEventContent}>
-          <Text style={styles.mealTime}>{mealEvent.hourMinString}</Text>
+          <Text style={styles.mealTime}>{mealType}</Text>
           <Text style={styles.recipeName}>{mealEvent.recipeName}</Text>
         </View>
       </View>

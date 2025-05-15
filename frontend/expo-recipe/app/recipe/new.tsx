@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Platform, Switch, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Platform, Switch, Modal, FlatList, Keyboard } from 'react-native';
 import { router, Tabs } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -184,13 +184,13 @@ export default function NewRecipeScreen() {
         ingredients: recipe?.ingredients?.map(ingredient => ({
           ingredientId: ingredient.ingredientId,
           amount: {
-            value: ingredient.amount.value,
+            value: Number(ingredient.amount.value),
             unit: ingredient.amount.unit
           }
-        })),
+        })) || [],
         steps: recipe.steps,
-        cookTimeMin: recipe.cookTimeMin || 0,
-        prepTimeMin: recipe.prepTimeMin || 0
+        cookTimeMin: Number(recipe.cookTimeMin) || 0,
+        prepTimeMin: Number(recipe.prepTimeMin) || 0
       };
 
       formData.append(
@@ -216,15 +216,12 @@ export default function NewRecipeScreen() {
 
   return (
     <>
-       <Tabs.Screen options={{
-        title: 'Create Recipe',        
-        }} />
+      <Tabs.Screen options={{
+        title: 'Create Recipe',
+        // headerShown: false,
+      }} />
       <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.container}>
-          {/* <View style={styles.header}>          
-            <Text style={styles.title}>Create your own Recipe</Text>          
-          </View> */}
-
           <View style={styles.form}>
             <View style={styles.field}>
               <Text style={styles.label}>Name *</Text>
@@ -511,16 +508,20 @@ export default function NewRecipeScreen() {
                 onChangeText={setCurrentQuantity}
                 placeholder="Quantity"
                 keyboardType="numeric"
+                returnKeyType="done"
+                onSubmitEditing={() => Keyboard.dismiss()}
               />
-              <Picker
-                selectedValue={selectedUnit}
-                onValueChange={(value) => setSelectedUnit(value)}
-                style={styles.unitPicker}
-              >
-                <Picker.Item label="g" value="g" />
-                <Picker.Item label="kg" value="kg" />
-                <Picker.Item label="pc" value="pc" />
-              </Picker>
+              <View style={styles.unitPickerContainer}>
+                <Picker
+                  selectedValue={selectedUnit}
+                  onValueChange={(value) => setSelectedUnit(value)}
+                  style={styles.unitPicker}
+                >
+                  <Picker.Item label="g" value="g" />
+                  <Picker.Item label="kg" value="kg" />
+                  <Picker.Item label="pc" value="pc" />
+                </Picker>
+              </View>
             </View>
 
             <TouchableOpacity
@@ -543,7 +544,7 @@ export default function NewRecipeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#fff',        
   },
   container: {
     flex: 1,
@@ -560,8 +561,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  form: {
+  form: {    
     padding: 16,
+    paddingTop: 0,
   },
   field: {
     marginBottom: 16,
@@ -610,12 +612,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
+  unitPickerContainer: {
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
   unitPicker: {
     width: 80,
     height: 40,
-    marginRight: 8,
-    backgroundColor: '#F2F2F7',
-    borderRadius: 8,
   },
   addButton: {
     backgroundColor: '#FFD700',
@@ -781,14 +786,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 8,
     marginRight: 8,
+    height: 40,
   },
   addIngredientButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#FFD700',
-    padding: 12,
-    borderRadius: 0,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
   },
   disabledButton: {
     backgroundColor: '#E5E5EA',

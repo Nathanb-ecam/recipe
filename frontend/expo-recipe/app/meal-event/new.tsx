@@ -1,45 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { MEAL_TYPES, FOOD_ORIGINS } from '../../types/constants';
-import { RecipeDto, FoodOrigin } from '../../types/recipe';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, SafeAreaView } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { recipeApi } from '../../services/recipeApi';
-import { router, Tabs } from 'expo-router';
+import { RecipeDto } from '../../types/recipe';
+import { MealType, MEAL_TYPES } from '../../types/constants';
+import { FontAwesome } from '@expo/vector-icons';
+import { calendarApi } from '@/services/calendarApi';
+import { CalendarUpdateRequest, MealEvent } from '@/types/calendar';
 import { API_ASSET_URL } from '@/services/config';
 
-type TabType = 'my' | 'saved';
-
 export default function NewMealEventScreen() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedTime, setSelectedTime] = useState(new Date());
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
+    const { selectedDate } = useLocalSearchParams();
+  
+const [recipes, setRecipes] = useState<RecipeDto[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeDto | null>(null);
+  const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null);
   const [eventName, setEventName] = useState('');
-  const [activeTab, setActiveTab] = useState<TabType>('my');
-  const [myRecipes, setMyRecipes] = useState<RecipeDto[]>([]);
-  const [savedRecipes, setSavedRecipes] = useState<RecipeDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedOrigins, setSelectedOrigins] = useState<FoodOrigin[]>([]);
-  const [showFilterModal, setShowFilterModal] = useState(false);
 
   useEffect(() => {
     loadRecipes();
-  }, [activeTab]);
+  }, []);
 
   const loadRecipes = async () => {
     try {
-      setLoading(true);
-      if (activeTab === 'my') {
-        const data = await recipeApi.getUserRecipes();
-        setMyRecipes(data);
-      } else {
-        const data = await recipeApi.getSavedRecipes();
-        setSavedRecipes(data);
-      }
+      const data = await recipeApi.getRecipes();
+      setRecipes(data);
     } catch (error) {
       console.error('Error loading recipes:', error);
     } finally {
@@ -47,48 +33,30 @@ export default function NewMealEventScreen() {
     }
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setSelectedDate(selectedDate);
-    }
-  };
-
-  const handleTimeChange = (event: any, selectedDate?: Date) => {
-    setShowTimePicker(false);
-    if (selectedDate) {
-      setSelectedTime(selectedDate);
-    }
-  };
-
-  const formatDateTime = (date: Date) => {
-    return date.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const handleFilterSelect = (origin: FoodOrigin) => {
-    setSelectedOrigins(prev => 
-      prev.includes(origin) 
-        ? prev.filter(o => o !== origin)
-        : [...prev, origin]
-    );
-  };
-
-  const filteredRecipes = (activeTab === 'my' ? myRecipes : savedRecipes).filter(recipe => 
-    selectedOrigins.length === 0 || 
-    recipe.foodOrigins?.some(origin => selectedOrigins.includes(origin))
-  );
-
   const handleCreateMealEvent = async () => {
-    if (!selectedMealType || (!selectedRecipe && !eventName)) {
-      alert('Please select meal type and either a recipe or enter an event name');
+    if (!selectedMealType) {
+      alert('Please select a meal type');
+      return;
+    }
+
+    if (!selectedRecipe && !eventName) {
+      alert('Please either select a recipe or enter an event name');
       return;
     }
 
     try {
-      // TODO: Implement meal event creation with date and time
+      const mealEvent : MealEvent = {
+        mealType: selectedMealType,
+        eventName: eventName || undefined,
+        recipeId: selectedRecipe?.id || ''
+      };
+      const calendarUpdateRequest: CalendarUpdateRequest = {
+        date: selectedDate as string,
+        mealEvents: [mealEvent]
+      };
+
+      // TODO: Add API call to create meal event
+      await calendarApi.updateMealPlan(calendarUpdateRequest);
       router.back();
     } catch (error) {
       console.error('Error creating meal event:', error);
@@ -97,157 +65,85 @@ export default function NewMealEventScreen() {
   };
 
   return (
-    <>
-    <Tabs.Screen options={{
-        title: 'Plan a Meal',        
-    }} />
-        <SafeAreaView style={styles.container}>
-
-        <ScrollView style={styles.content}>
-            <View style={styles.formGroup}>
-            <Text style={styles.label}>Date and Time *</Text>
-            <TouchableOpacity
-                style={styles.dateTimeSelector}
-                onPress={() => setShowDatePicker(true)}
-            >
-                <Text style={styles.dateTimeText}>{formatDateTime(selectedDate)}</Text>
-                <FontAwesome name="calendar" size={20} color="#666" />
-            </TouchableOpacity>
-            </View>
-
-            {showDatePicker && (
-            <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-            />
-            )}
-
-            <View style={styles.formGroup}>
-            <Text style={styles.label}>Meal Type *</Text>
-            <View style={styles.mealTypeButtons}>
-                {MEAL_TYPES.map((type) => (
-                <TouchableOpacity
-                    key={type}
-                    style={[
-                    styles.mealTypeButton,
-                    selectedMealType === type && styles.selectedMealTypeButton
-                    ]}
-                    onPress={() => setSelectedMealType(type)}
-                >
-                    <Text style={[
-                    styles.mealTypeButtonText,
-                    selectedMealType === type && styles.selectedMealTypeButtonText
-                    ]}>
-                    {type}
-                    </Text>
-                </TouchableOpacity>
-                ))}
-            </View>
-            </View>
-
-            <View style={styles.formGroup}>
-            <Text style={styles.label}>Event Name</Text>
-            <TextInput
-                style={styles.input}
-                value={eventName}
-                onChangeText={setEventName}
-                placeholder="Enter event name (optional if selecting a recipe)"
-            />
-            </View>
-
-            <View style={styles.formGroup}>
-            <Text style={styles.label}>Or Select a Recipe</Text>
-            <View style={styles.tabNavigation}>
-                <TouchableOpacity
-                style={[styles.tab, activeTab === 'my' && styles.activeTab]}
-                onPress={() => setActiveTab('my')}
-                >
-                <Text style={[styles.tabText, activeTab === 'my' && styles.activeTabText]}>
-                    My Recipes
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.content}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Meal Type *</Text>
+          <View style={styles.mealTypesContainer}>
+            {MEAL_TYPES.map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[
+                  styles.mealTypeButton,
+                  selectedMealType === type && styles.mealTypeButtonSelected
+                ]}
+                onPress={() => setSelectedMealType(type)}
+              >
+                <Text style={[
+                  styles.mealTypeText,
+                  selectedMealType === type && styles.mealTypeTextSelected
+                ]}>
+                  {type}
                 </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                style={[styles.tab, activeTab === 'saved' && styles.activeTab]}
-                onPress={() => setActiveTab('saved')}
-                >
-                <Text style={[styles.tabText, activeTab === 'saved' && styles.activeTabText]}>
-                    Saved Recipes
-                </Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.filterContainer}>
-                <TouchableOpacity
-                style={styles.filterButton}
-                onPress={() => setShowFilterModal(true)}
-                >
-                <FontAwesome name="filter" size={20} color="#666" />
-                <Text style={styles.filterButtonText}>Filter</Text>
-                </TouchableOpacity>
-                {selectedOrigins.length > 0 && (
-                <View style={styles.selectedFilters}>
-                    {selectedOrigins.map((origin) => (
-                    <View key={origin} style={styles.filterTag}>
-                        <Text style={styles.filterTagText}>{origin}</Text>
-                        <TouchableOpacity
-                        onPress={() => handleFilterSelect(origin)}
-                        style={styles.filterTagRemove}
-                        >
-                        <FontAwesome name="times" size={12} color="#666" />
-                        </TouchableOpacity>
-                    </View>
-                    ))}
-                </View>
-                )}
-            </View>
-
-            <ScrollView style={styles.recipeList}>
-                {filteredRecipes.map((recipe) => (
-                <TouchableOpacity
-                    key={recipe.id}
-                    style={styles.recipeCard}
-                    onPress={() => setSelectedRecipe(recipe)}
-                >
-                    <View style={styles.recipeCardContent}>
-                    {recipe.imageUrl ? (
-                        <Image
-                        source={{ uri: API_ASSET_URL + recipe.imageUrl }}
-                        style={styles.recipeCardImage}
-                        />
-                    ) : (
-                        <View style={styles.recipeCardImagePlaceholder}>
-                        <FontAwesome name="image" size={24} color="#666" />
-                        </View>
-                    )}
-                    <View style={styles.recipeCardInfo}>
-                        <Text style={styles.recipeCardName}>{recipe.name}</Text>
-                        <View style={styles.recipeCardTags}>
-                        {recipe.foodOrigins?.map((origin) => (
-                            <View key={origin} style={styles.recipeCardTag}>
-                            <Text style={styles.recipeCardTagText}>{origin}</Text>
-                            </View>
-                        ))}
-                        </View>
-                    </View>
-                    </View>
-                </TouchableOpacity>
-                ))}
-            </ScrollView>
-            </View>
-        </ScrollView>
-
-        <View style={styles.footer}>
-            <TouchableOpacity
-            style={styles.createButton}
-            onPress={handleCreateMealEvent}
-            >
-            <Text style={styles.createButtonText}>Create Meal Event</Text>
-            </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-        </SafeAreaView>
-    </>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recipe (Optional)</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recipesContainer}>
+            {recipes.map((recipe) => (
+              <TouchableOpacity
+                key={recipe.id}
+                style={[
+                  styles.recipeCard,
+                  selectedRecipe?.id === recipe.id && styles.recipeCardSelected
+                ]}
+                onPress={() => setSelectedRecipe(recipe)}
+              >
+                {recipe.imageUrl && (
+                  <Image
+                    source={{ uri: `${API_ASSET_URL}/${recipe.imageUrl}` }}
+                    style={styles.recipeImage}
+                    resizeMode="cover"
+                  />
+                )}
+                <Text style={styles.recipeName} numberOfLines={2}>
+                  {recipe.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Event Name (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            value={eventName}
+            onChangeText={setEventName}
+            placeholder="Enter event name"
+            placeholderTextColor="#666"
+          />
+        </View>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, styles.cancelButton]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.buttonText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.createButton]}
+            onPress={handleCreateMealEvent}
+          >
+            <Text style={styles.createButtonText}>Create Event</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -256,52 +152,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
   content: {
     flex: 1,
     padding: 16,
   },
-  formGroup: {
+  section: {
     marginBottom: 24,
   },
-  label: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
   },
-  dateTimeSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#f8f8f8',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-  },
-  dateTimeText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  mealTypeButtons: {
+  mealTypesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
@@ -310,156 +173,78 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-  },
-  selectedMealTypeButton: {
-    backgroundColor: '#FFD700',
-  },
-  mealTypeButtonText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  selectedMealTypeButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  tabNavigation: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-    marginBottom: 16,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#FFD700',
-  },
-  tabText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#FFD700',
-    fontWeight: '600',
-  },
-  filterContainer: {
-    marginBottom: 16,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#f8f8f8',
-    padding: 8,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  filterButtonText: {
-    marginLeft: 8,
-    color: '#666',
-  },
-  selectedFilters: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-  },
-  filterTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
     borderWidth: 1,
     borderColor: '#E5E5EA',
   },
-  filterTagText: {
+  mealTypeButtonSelected: {
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
+  },
+  mealTypeText: {
     fontSize: 14,
     color: '#666',
-    marginRight: 4,
   },
-  filterTagRemove: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+  mealTypeTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
   },
-  recipeList: {
-    maxHeight: 400,
+  recipesContainer: {
+    marginHorizontal: -16,
+    paddingHorizontal: 16,
   },
   recipeCard: {
-    backgroundColor: '#fff',
+    width: 160,
+    marginRight: 12,
     borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    overflow: 'hidden',
+    backgroundColor: '#f8f8f8',
   },
-  recipeCardContent: {
-    flexDirection: 'row',
+  recipeCardSelected: {
+    backgroundColor: '#E5E5EA',
+  },
+  recipeImage: {
+    width: '100%',
+    height: 120,
+  },
+  recipeName: {
+    padding: 8,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 8,
     padding: 12,
-  },
-  recipeCardImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-  },
-  recipeCardImagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  recipeCardInfo: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: 'center',
-  },
-  recipeCardName: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
   },
-  recipeCardTags: {
+  buttonContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
+    justifyContent: 'space-between',
+    marginTop: 24,
+    marginBottom: 32,
   },
-  recipeCardTag: {
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  recipeCardTagText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  footer: {
+  button: {
+    flex: 1,
     padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  cancelButton: {
+    backgroundColor: '#f8f8f8',
   },
   createButton: {
     backgroundColor: '#FFD700',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
   },
-  createButtonText: {
-    color: '#fff',
+  buttonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  createButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 }); 

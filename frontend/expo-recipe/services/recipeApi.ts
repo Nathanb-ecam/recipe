@@ -233,11 +233,11 @@ export const recipeApi = {
   // Create a new recipe with an image
   createRecipeWithImage: async (formData: FormData): Promise<RecipeDto> => {
     try {
-      console.log('Creating recipe with image');
+/*       console.log('Creating recipe with image');
       for (const pair of formData.entries()) {
         console.log(`${pair[0]}:`, pair[1]);
       }
-      console.log('access token', await getAccessToken());       
+      console.log('access token', await getAccessToken());  */      
       
       const response = await fetch(`${API_URL}/users/${await getTenantId()}/recipe-with-cover-image`, {
         method: 'POST',

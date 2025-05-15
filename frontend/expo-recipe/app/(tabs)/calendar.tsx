@@ -11,7 +11,7 @@ import { RecipeSelectionModal } from '../../components/RecipeSelectionModal';
 import { FontAwesome } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MEAL_TYPES } from '../../types/constants';
-import { useRouter } from 'expo-router';
+import { router, useRouter } from 'expo-router';
 import { api } from '../../services/api';
 
 export default function CalendarScreen() {
@@ -29,8 +29,11 @@ export default function CalendarScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    loadMealPlan();
     loadRecipes();
+  }, []);
+
+  useEffect(() => {
+    loadMealPlan();    
   }, [selectedDate]);
 
   const loadRecipes = async () => {
@@ -71,18 +74,19 @@ export default function CalendarScreen() {
     }
   };
 
-  const handleAddMealEvent = async (recipe: RecipeDto, hourMinString: string) => {
+  const handleAddMealEvent = async (recipe: RecipeDto, mealType: MealType) => {
     if (!calendarItem) return;
 
     const newMealEvent: MealEvent = {
-      hourMinString,
+      // hourMinString,
+      mealType: selectedMealType,
       recipeId: recipe.id,
       recipeName: recipe.name,
     };
 
     const updatedMealEvents = [...calendarItem.mealEvents, newMealEvent];
     // Sort mealEvents by hourMinString ("HH:mm")
-    updatedMealEvents.sort((a, b) => a.hourMinString.localeCompare(b.hourMinString));
+    // updatedMealEvents.sort((a, b) => a.hourMinString.localeCompare(b.hourMinString));
 
     const updatedCalendarItem = {
       ...calendarItem,
@@ -121,46 +125,42 @@ export default function CalendarScreen() {
     }
   };
 
-  const getMealEventColor = (hourMinString: string) => {
-    const [hours, minutes] = hourMinString.split(':').map(Number);
-    const timeInMinutes = hours * 60 + minutes;
-    
-    if (timeInMinutes < 12 * 60) { // Before noon
-      return '#FFD700'; // Yellow for breakfast
-    } else if (timeInMinutes < 15 * 60) { // Before 3 PM
-      return '#FFA500'; // Orange for lunch
-    } else {
-      return '#FF6347'; // Red for dinner
+  const getMealEventColor = (mealType: string) => {
+    switch (mealType) {
+      case 'BREAKFAST':
+        return '#FFD700'; // Yellow for breakfast
+      case 'LUNCH':
+        return '#FFA500'; // Orange for lunch
+      case 'DINNER':
+        return '#FF6347'; // Red for dinner
     }
   };
 
-  const getMealEventTitle = (hourMinString: string) => {
-    const [hours, minutes] = hourMinString.split(':').map(Number);
-    const timeInMinutes = hours * 60 + minutes;
-    
-    if (timeInMinutes < 12 * 60) {
-      return 'Breakfast';
-    } else if (timeInMinutes < 15 * 60) {
-      return 'Lunch';
-    } else {
-      return 'Dinner';
+  const getMealEventTitle = (mealType: string) => {
+    switch (mealType) {
+      case 'BREAKFAST':
+        return 'Breakfast';
+      case 'LUNCH':
+        return 'Lunch';
+      case 'DINNER':
+        return 'Dinner';
     }
   };
+
 
   const renderMealEvent = (mealEvent: MealEvent) => {
-    const color = getMealEventColor(mealEvent.hourMinString);
-    const title = getMealEventTitle(mealEvent.hourMinString);
+    const color = getMealEventColor(mealEvent.mealType);
+    const title = getMealEventTitle(mealEvent.mealType);
     
     return (
       <View style={styles.mealEventContainer}>
-        {/* <Text style={styles.mealEventTitle}>{title}</Text> */}
         <TouchableOpacity
           style={styles.mealEvent}
-          onPress={() => router.push(`/recipe/${mealEvent.recipeId}`)}
+          onPress={() => mealEvent.recipeId ? router.push(`/recipe/${mealEvent.recipeId}`) : null}
         >
           <View style={[styles.mealEventColorLine, { backgroundColor: color }]} />
           <View style={styles.mealEventContent}>
-            <Text style={styles.mealTime}>{mealEvent.hourMinString}</Text>
+            <Text style={styles.mealTime}>{mealEvent.mealType}</Text>
             <Text style={styles.mealName}>{mealEvent.recipeName}</Text>
           </View>
           <TouchableOpacity
@@ -177,125 +177,12 @@ export default function CalendarScreen() {
   const renderAddButton = () => (
     <TouchableOpacity
       style={styles.addButton}
-      onPress={() => router.push('/meal-event/new')}
+      onPress={() => router.push({ pathname: '/meal-event/new', params: { selectedDate: selectedDate } })}
     >
       <FontAwesome name="plus" size={24} color="#FFD700" />
     </TouchableOpacity>
   );
 
-  const RecipeSelectionModal = () => {
-    const [selectedTime, setSelectedTime] = useState(new Date());
-    const [selectedMealType, setSelectedMealType] = useState<MealType>('BREAKFAST');
-    const [searchText, setSearchText] = useState('');
-
-    const handleTimeChange = (event: DateTimePickerEvent, date?: Date) => {
-      if (date) {
-        setSelectedTime(date);
-      }
-    };
-
-    const handleConfirm = () => {
-      const hourMinString = `${selectedTime.getHours().toString().padStart(2, '0')}:${selectedTime.getMinutes().toString().padStart(2, '0')}`;
-      const selectedRecipe = recipes.find(r => r.mealTypes?.includes(selectedMealType));
-      if (selectedRecipe) {
-        handleAddMealEvent(selectedRecipe, hourMinString);
-      }
-      setModalVisible(false);
-    };
-
-    const filteredRecipes = recipes.filter(recipe => 
-      recipe.mealTypes?.includes(selectedMealType) &&
-      recipe.name.toLowerCase().includes(searchText.toLowerCase())
-    );
-
-    return (
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Meal Event</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <FontAwesome name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.timePickerContainer}>
-              <DateTimePicker
-                value={selectedTime}
-                mode="time"
-                display="spinner"
-                onChange={handleTimeChange}
-              />
-            </View>
-
-            <View style={styles.mealTypeTabs}>
-              {['BREAKFAST', 'LUNCH', 'DINNER'].map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.mealTypeTab,
-                    selectedMealType === type && styles.selectedMealTypeTab
-                  ]}
-                  onPress={() => setSelectedMealType(type as MealType)}
-                >
-                  <Text style={[
-                    styles.mealTypeTabText,
-                    selectedMealType === type && styles.selectedMealTypeTabText
-                  ]}>
-                    {type}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search recipes..."
-              value={searchText}
-              onChangeText={setSearchText}
-            />
-
-            <FlatList
-              data={filteredRecipes}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.recipeItem}
-                  onPress={() => {
-                    const hourMinString = `${selectedTime.getHours().toString().padStart(2, '0')}:${selectedTime.getMinutes().toString().padStart(2, '0')}`;
-                    handleAddMealEvent(item, hourMinString);
-                    setModalVisible(false);
-                  }}
-                >
-                  <Text style={styles.recipeItemText}>{item.name}</Text>
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item) => item.id}
-            />
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.confirmButton}
-                onPress={handleConfirm}
-              >
-                <Text style={styles.confirmButtonText}>Confirm</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
@@ -331,7 +218,7 @@ export default function CalendarScreen() {
             }
           />
         </View>
-        <RecipeSelectionModal />
+        {/* <RecipeSelectionModal /> */}
       </View>
     </SafeAreaView>
   );

@@ -1,5 +1,6 @@
 export interface MealEvent {
-  hourMinString: string;
+  // hourMinString: string;
+  mealType: string;
   recipeId: string;
   eventName?: string;
   recipeName?: string;
