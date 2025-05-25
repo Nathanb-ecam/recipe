@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,5 +28,9 @@ public class CalendarItem {
     private LocalDate date;
 
     private List<MealEvent> mealEvents;
+
+    /*private List<String> breakfasts = new ArrayList<>(); // either the recipeId or a personalized recipeName
+    private List<String> lunches = new ArrayList<>(); // either the recipeId or a personalized recipeName
+    private List<String> dinners = new ArrayList<>();// either the recipeId or a personalized recipeName@*/
 
 }

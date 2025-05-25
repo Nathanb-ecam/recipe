@@ -1,6 +1,6 @@
 package com.example.recipe.controller;
 
-import com.example.recipe.dto.requests.CalendarUpdateRequest;
+import com.example.recipe.dto.requests.CalendarRequest;
 import com.example.recipe.entity.CalendarItem;
 import com.example.recipe.service.CalendarService;
 import jakarta.validation.Valid;
@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/users/{tenantId}/calendar")
@@ -44,7 +43,7 @@ public class CalendarController {
     }
 
 
-    @PutMapping
+/*    @PutMapping
     public ResponseEntity<CalendarItem> updateCalendarItem(
             @PathVariable String tenantId,
             //@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PathVariable LocalDate date,
@@ -53,5 +52,33 @@ public class CalendarController {
         CalendarItem updatedItem = calendarService.updateCalendarItem(tenantId, updateRequest);
 
         return ResponseEntity.ok(updatedItem);
+    }*/
+
+    @PutMapping
+    public ResponseEntity<CalendarItem> appendMealToCalendarItem(
+            @PathVariable String tenantId,
+            //@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @PathVariable LocalDate date,
+            @RequestBody @Valid CalendarRequest updateRequest) {
+
+        CalendarItem updatedItem = calendarService.mergeMealPlans(tenantId, updateRequest);
+
+
+        return ResponseEntity.ok(updatedItem);
     }
+
+
+    @DeleteMapping
+    public ResponseEntity<?> deleteMealEvent(
+            @PathVariable String tenantId,
+            @RequestBody @Valid CalendarRequest deleteRequest) {
+
+        calendarService.deleteMealEvents(tenantId, deleteRequest);
+        return ResponseEntity.noContent().build();
+    }
+
+
+
+
+
+
 }
