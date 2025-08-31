@@ -1,9 +1,10 @@
-import { RegisterRequest, LoginRequest, UserDto } from '../types';
+import { RegisterRequest, LoginRequest } from '../types/index';
+import { UserDto } from '../types';
 import { getAccessToken } from './authUtils';
 import { API_URL } from './config';
 
 export const userApi = {
-  async register(data: RegisterRequest): Promise<{ token: string; user: any }> {
+  async register(data: RegisterRequest): Promise<string> {
     const response = await fetch(`${API_URL}/auth/signup`, {
       method: 'POST',
       headers: {
@@ -14,13 +15,15 @@ export const userApi = {
     if (!response.ok) {
       throw new Error('Registration failed');
     }
-    return response.json();
+    const text =  await response.text();
+    console.log('Registration response:', response);    
+    return text; // Assuming the response is a message string
   },
 
   async login(data: LoginRequest): Promise<{ user: UserDto, accessToken: string; refreshToken: string }> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      // const controller = new AbortController();
+      // const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
@@ -28,10 +31,10 @@ export const userApi = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
-        signal: controller.signal,
+        // signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
+      // clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -43,7 +46,7 @@ export const userApi = {
         throw new Error(`Login failed: ${response.status} ${response.statusText}`);
       }
 
-      return response.json();
+      return await response.json();
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
@@ -53,6 +56,20 @@ export const userApi = {
       }
       throw error;
     }
+  },
+
+  async confirmAccount(mail: string, otp: string): Promise<string> {
+    const response = await fetch(`${API_URL}/auth/confirmAccount`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ mail, otp }),
+    });
+    if (!response.ok) {
+      throw new Error('OTP verification failed');
+    }
+    return await response.text();
   },
 
   async getUserProfile(): Promise<UserDto> {

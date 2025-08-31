@@ -16,22 +16,22 @@ export interface RecipeIngredient {
 
 
 export type RegisterRequest = {
-  email: string;
+  mail: string;
   password: string;
   name: string;
 };
 
 export type LoginRequest = {
-  email: string;
+  mail: string;
   password: string;
 };
 
-export type UserDto = {
-  id: string;
-  name: string;
-  email: string;
-  recipesIds: string[];
-};
+// export type UserDto = {
+//   id: string;
+//   name: string;
+//   mail: string;
+//   recipesIds: string[];
+// };
 
 export interface AuthResponse {
   accessToken: string;

@@ -20,4 +20,5 @@ public class UserDto {
     private List<String> recipesIds;
     private List<String> savedRecipesIds;
     private Grocery grocery;
+
 }

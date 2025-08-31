@@ -4,17 +4,27 @@ import { Link, router } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function RegisterScreen() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [registerData, setRegisterData] = useState({
+    name: '', 
+    mail: '', 
+    password: ''
+  });
+  const [msg, setMsg] = useState('');
   const { register } = useAuth();
 
   const handleRegister = async () => {
     try {
-      await register(name, email, password);
-      router.replace('/(tabs)/login');
+      const { name, mail, password } = registerData;
+      const msg = await register(name, mail, password);
+      setMsg(msg);
+      router.replace({
+        pathname: '/(auth)/OTP-verification',
+        params: { mail },
+      });
+ 
     } catch (error) {
       Alert.alert('Error', 'Failed to register. Please try again.');
+      setMsg('Registration failed. Please try again.');
     }
   };
 
@@ -25,24 +35,25 @@ export default function RegisterScreen() {
         <TextInput
           style={styles.input}
           placeholder="Name"
-          value={name}
-          onChangeText={setName}
+          value={registerData.name}
+          onChangeText={(text) => setRegisterData({ ...registerData, name: text })}
         />
         <TextInput
           style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
+          placeholder="Mail"
+          value={registerData.mail}
+          onChangeText={(text) => setRegisterData({ ...registerData, mail: text })}                  
           keyboardType="email-address"
           autoCapitalize="none"
         />
         <TextInput
           style={styles.input}
           placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
+          value={registerData.password}
+          onChangeText={(text) => setRegisterData({ ...registerData, password: text })}
           secureTextEntry
         />
+        <Text>{msg}</Text>
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
@@ -70,7 +81,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   form: {
-    gap: 20,
+    gap: 10,
   },
   input: {
     height: 50,

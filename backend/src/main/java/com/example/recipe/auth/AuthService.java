@@ -40,6 +40,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
+
     public AuthenticationResponse authenticate(AuthenticationRequest request){
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -66,13 +67,25 @@ public class AuthService {
         // 2 create un temp user
         var username = request.getName();
         var mail = request.getMail();
+
         if (username == null || username.isEmpty()) {
             if (mail != null && mail.contains("@")) {
                 username = mail.split("@")[0];
+            } else {
+                log.error("Couldn't set username from mail");
+                return false;
             }
-        }else{
-            log.error("Couldn't set username from mail");
-            return false;
+        }
+
+        var existingUser = tempUserRepository.findByMail(mail);
+        if(existingUser.isPresent()){
+            var u = existingUser.get();
+            u.setOTP(otp);
+            u.setMail(mail);
+            u.setName(username);
+            u.setPassword(passwordEncoder.encode(request.getPassword()));
+            tempUserRepository.save(u);
+            return mailService.sendOtpVerification(mail, otp);
         }
         var tempUser = TemporaryUser.builder()
                         .id(UUID.randomUUID().toString())

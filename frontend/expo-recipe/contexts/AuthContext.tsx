@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../services/api';
-import { UserDto } from '../types';
 import { router } from 'expo-router';
+import { UserDto } from '../types';
 
 interface AuthContextType {
   user: UserDto | null;
   token: {accessToken:string,refreshToken:string} | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (mail: string, password: string) => Promise<void>;
+  register: (name: string, mail: string, password: string) => Promise<string>;
+  OTPRequest: (mail: string, otp: string) => Promise<string>;
   logout: () => Promise<void>;
 }
 
@@ -80,9 +81,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (mail: string, password: string) => {
     try {
-      const { accessToken, refreshToken, user } = await api.login({ mail: email, password });
+      const { accessToken, refreshToken, user } = await api.login({ mail, password });
       await AsyncStorage.setItem('accessToken', accessToken);
       await AsyncStorage.setItem('refreshToken', refreshToken);
       await AsyncStorage.setItem('user', JSON.stringify(user));
@@ -94,9 +95,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, mail: string, password: string) : Promise<string> => {
     try {
-      // const { token, user } = await api.register({ name, mail: email, password });
+      const msg  = await api.register({ name, mail, password });
+      return msg;
       // await AsyncStorage.setItem('accessToken', accessToken);
       // await AsyncStorage.setItem('refreshToken', refreshToken);
       // await AsyncStorage.setItem('user', JSON.stringify(user));
@@ -104,9 +106,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // setUser(user);
     } catch (error) {
       console.error('Registration error:', error);
+      // return 'Registration failed';
       throw error;
     }
   };
+
+  const OTPRequest = async (mail: string, otp: string) => {
+    try {
+      const response = await api.confirmAccount(mail, otp);
+      return response;
+    } catch (error) {
+      console.error('OTP request error:', error);
+      throw error;
+    }
+  };
+
 
   const logout = async () => {
     try {
@@ -123,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, OTPRequest, logout }}>
       {children}
     </AuthContext.Provider>
   );

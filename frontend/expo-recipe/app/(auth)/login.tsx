@@ -1,21 +1,36 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Link, router } from 'expo-router';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
+  const [mail, setMail] = useState('');
   const [password, setPassword] = useState('');
   const { login } = useAuth();
+  const { recMail, recPassword } = useLocalSearchParams();
 
   const handleLogin = async () => {
     try {
-      await login(email, password);
+      await login(mail, password);
       router.replace('/(tabs)/home');
     } catch (error) {
       Alert.alert('Error', 'Failed to login. Please check your credentials.');
     }
   };
+
+  // if (recMail && recPassword) {
+  //     setMail(recMail as string);
+  //     setPassword(recPassword as string);
+  //     handleLogin();
+  // }
+
+  // useEffect(() => {
+  //   if (recMail && recPassword) {
+  //     setMail(recMail as string);
+  //     setPassword(recPassword as string);
+  //     handleLogin();
+  //   }
+  // }, [recMail, recPassword]);
 
   return (
     <View style={styles.container}>
@@ -23,9 +38,9 @@ export default function LoginScreen() {
       <View style={styles.form}>
         <TextInput
           style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
+          placeholder="Mail"
+          value={mail}
+          onChangeText={setMail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
